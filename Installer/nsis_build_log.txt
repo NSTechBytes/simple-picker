@@ -1,0 +1,24 @@
+[INFO] Build started at Sun 08/03/2025 17:24:50.66 
+[INFO] Using NSIS compiler at: C:\Program Files (x86)\NSIS\makensis.exe 
+[INFO] Compiling script: Installer.nsi 
+ 
+Processing config: C:\Program Files (x86)\NSIS\nsisconf.nsh
+Processing script file: "Installer.nsi" (ACP)
+
+Processed 1 file, writing output (x86-ansi):
+
+Output: "D:\GitHub\simple-picker\Installer\SimplePicker-Setup.exe"
+Install: 6 pages (384 bytes), 3 sections (6216 bytes), 502 instructions (14056 bytes), 258 strings (5866 bytes), 1 language table (354 bytes).
+Uninstall: 4 pages (320 bytes), 1 section (2072 bytes), 414 instructions (11592 bytes), 185 strings (3113 bytes), 1 language table (290 bytes).
+Datablock optimizer saved 4489 bytes (~1.8%).
+
+Using zlib compression.
+
+EXE header size:               55296 / 37888 bytes
+Install code:                   5247 / 24268 bytes
+Install data:                 143426 / 579403 bytes
+Uninstall code+data:           36183 / 36754 bytes
+CRC (0x326200A2):                  4 / 4 bytes
+
+Total size:                   240156 / 678317 bytes (35.4%)
+[SUCCESS] Build completed at Sun 08/03/2025 17:24:51.20 
