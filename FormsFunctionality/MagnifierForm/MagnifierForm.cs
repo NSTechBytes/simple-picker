@@ -206,6 +206,7 @@ namespace simple_picker
 
         private void InitializeComponent()
         {
+            this.ShowInTaskbar = false;
             this.SuspendLayout();
             this.AutoScaleDimensions = new SizeF(7F, 15F);
             this.AutoScaleMode = AutoScaleMode.Font;

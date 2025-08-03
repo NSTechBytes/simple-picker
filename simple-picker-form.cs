@@ -4,6 +4,8 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.IO;
 using System.Text.Json; // Using System.Text.Json instead of Newtonsoft.Json
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace simple_picker
 {
@@ -13,7 +15,9 @@ namespace simple_picker
         private GlobalHotkey? globalHotkey;
         private Settings settings = new Settings(); // FIX: Initialize to avoid CS8618
         private ColorPickerForm? colorPickerForm;
+        private UpdateManager? updateManager;
         private string settingsPath = "settings.json";
+        private System.Threading.Timer? updateTimer; // Timer for periodic update checks
 
         [DllImport("user32.dll")]
         private static extern bool SetProcessDPIAware();
@@ -25,6 +29,7 @@ namespace simple_picker
             LoadSettings();
             InitializeTrayIcon();
             InitializeGlobalHotkey();
+            InitializeUpdateManager();
         }
 
         private void LoadSettings()
@@ -41,10 +46,14 @@ namespace simple_picker
                     settings = new Settings();
                     SaveSettings();
                 }
+                
+                // Reset session flag when loading settings (new program session)
+                settings.UpdateDialogShownThisSession = false;
             }
             catch
             {
                 settings = new Settings();
+                settings.UpdateDialogShownThisSession = false;
             }
         }
 
@@ -106,6 +115,9 @@ namespace simple_picker
             ToolStripMenuItem settings = new ToolStripMenuItem("Settings");
             settings.Click += (s, e) => ShowSettings();
 
+            ToolStripMenuItem checkUpdates = new ToolStripMenuItem("Check for Updates");
+            checkUpdates.Click += async (s, e) => await CheckForUpdatesManually();
+
             ToolStripMenuItem exit = new ToolStripMenuItem("Exit");
             exit.Click += (s, e) => ExitApplication();
 
@@ -113,6 +125,7 @@ namespace simple_picker
             menu.Items.Add(colorSelector);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(settings);
+            menu.Items.Add(checkUpdates);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(exit);
             return menu;
@@ -127,6 +140,65 @@ namespace simple_picker
             
             // Register color selector hotkey
             globalHotkey.RegisterColorSelectorHotkey(settings.ColorSelectorHotkeyModifiers, settings.ColorSelectorHotkeyKey, ShowColorSelector);
+        }
+
+        private void InitializeUpdateManager()
+        {
+            updateManager = new UpdateManager(settings, this); // Pass reference to MainForm
+            
+            // Start initial update check after a short delay
+            Task.Delay(2000).ContinueWith(async _ => await CheckForUpdatesInBackground());
+            
+            // Set up periodic update checks using a timer
+            SetupUpdateTimer();
+        }
+
+        private void SetupUpdateTimer()
+        {
+            // Dispose existing timer if any
+            updateTimer?.Dispose();
+            
+            if (settings.AutoCheckForUpdates)
+            {
+                // Create timer that runs every interval specified in settings
+                int intervalMs = settings.UpdateCheckIntervalSeconds * 1000;
+                updateTimer = new System.Threading.Timer(async _ => await CheckForUpdatesInBackground(), 
+                    null, intervalMs, intervalMs);
+            }
+        }
+
+        private async Task CheckForUpdatesInBackground()
+        {
+            if (updateManager != null)
+            {
+                await updateManager.CheckForUpdatesInBackground();
+                SaveSettings(); // Save updated LastUpdateCheck and session flag
+            }
+        }
+
+        private async Task CheckForUpdatesManually()
+        {
+            if (updateManager != null)
+            {
+                var result = await updateManager.CheckForUpdatesAsync(showNoUpdateMessage: true);
+                updateManager.ShowUpdateDialog(result);
+                SaveSettings(); // Save updated LastUpdateCheck
+            }
+        }
+
+        // Public method for UpdateManager to show dialogs on main thread
+        public void ShowUpdateDialogOnMainThread(UpdateResult result)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action<UpdateResult>(ShowUpdateDialogOnMainThread), result);
+                return;
+            }
+            
+            if (updateManager != null)
+            {
+                updateManager.ShowUpdateDialog(result);
+            }
         }
 
         private void TriggerColorPicker()
@@ -161,6 +233,10 @@ namespace simple_picker
                 // Restart hotkeys with new settings
                 globalHotkey?.Dispose();
                 InitializeGlobalHotkey();
+                
+                // Reinitialize update manager and timer with new settings
+                updateManager = new UpdateManager(settings, this);
+                SetupUpdateTimer();
             }
         }
 
@@ -171,6 +247,7 @@ namespace simple_picker
                 trayIcon.Visible = false;
             }
             globalHotkey?.Dispose();
+            updateTimer?.Dispose();
             Application.Exit();
         }
 

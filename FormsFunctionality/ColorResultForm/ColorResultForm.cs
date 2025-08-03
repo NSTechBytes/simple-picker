@@ -92,14 +92,5 @@ namespace simple_picker
             };
             feedbackTimer.Start();
         }
-
-        protected override void OnDeactivate(EventArgs e)
-        {
-            // Close when focus is lost
-            this.Close();
-            base.OnDeactivate(e);
-        }
-
-        // Dispose method is handled in Designer.cs
     }
 }

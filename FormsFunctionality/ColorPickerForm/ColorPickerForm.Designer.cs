@@ -20,6 +20,7 @@ namespace simple_picker
             this.Text = "ColorPickerForm";
             this.KeyPreview = true;
             this.ResumeLayout(false);
+            this.ShowInTaskbar = false;
         }
     }
 }

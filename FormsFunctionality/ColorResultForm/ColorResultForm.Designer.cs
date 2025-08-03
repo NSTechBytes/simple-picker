@@ -32,6 +32,7 @@ namespace simple_picker
 
         private void InitializeComponent()
         {
+            this.ShowInTaskbar = false;
             this.colorPanel = new Panel();
             this.rgbLabel = new Label();
             this.hexLabel = new Label();
