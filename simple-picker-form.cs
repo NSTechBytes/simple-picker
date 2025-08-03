@@ -93,13 +93,15 @@ namespace simple_picker
             }
         }
 
-
         private ContextMenuStrip CreateContextMenu()
         {
             ContextMenuStrip menu = new ContextMenuStrip();
 
-            ToolStripMenuItem pickColor = new ToolStripMenuItem("Pick Color");
+            ToolStripMenuItem pickColor = new ToolStripMenuItem("Pick Color from Screen");
             pickColor.Click += (s, e) => TriggerColorPicker();
+
+            ToolStripMenuItem colorSelector = new ToolStripMenuItem("Color Selector");
+            colorSelector.Click += (s, e) => ShowColorSelector();
 
             ToolStripMenuItem settings = new ToolStripMenuItem("Settings");
             settings.Click += (s, e) => ShowSettings();
@@ -108,6 +110,8 @@ namespace simple_picker
             exit.Click += (s, e) => ExitApplication();
 
             menu.Items.Add(pickColor);
+            menu.Items.Add(colorSelector);
+            menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(settings);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(exit);
@@ -128,6 +132,13 @@ namespace simple_picker
                 colorPickerForm.ColorSelected += OnColorSelected;
             }
             colorPickerForm.StartColorPicking();
+        }
+
+        private void ShowColorSelector()
+        {
+            ColorSelectorForm colorSelectorForm = new ColorSelectorForm();
+            colorSelectorForm.ColorSelected += OnColorSelected;
+            colorSelectorForm.ShowDialog();
         }
 
         private void OnColorSelected(Color color)
