@@ -12,6 +12,11 @@ namespace simple_picker
         private CheckBox controlModifierCheckBox;
         private CheckBox altModifierCheckBox;
         private CheckBox shiftModifierCheckBox;
+        private GroupBox colorSelectorHotkeyGroupBox;
+        private ComboBox colorSelectorHotkeyComboBox;
+        private CheckBox colorSelectorControlModifierCheckBox;
+        private CheckBox colorSelectorAltModifierCheckBox;
+        private CheckBox colorSelectorShiftModifierCheckBox;
         private GroupBox popupGroupBox;
         private CheckBox topMostCheckBox;
         private Label durationLabel;
@@ -35,6 +40,11 @@ namespace simple_picker
             this.controlModifierCheckBox = new CheckBox();
             this.altModifierCheckBox = new CheckBox();
             this.shiftModifierCheckBox = new CheckBox();
+            this.colorSelectorHotkeyGroupBox = new GroupBox();
+            this.colorSelectorHotkeyComboBox = new ComboBox();
+            this.colorSelectorControlModifierCheckBox = new CheckBox();
+            this.colorSelectorAltModifierCheckBox = new CheckBox();
+            this.colorSelectorShiftModifierCheckBox = new CheckBox();
             this.popupGroupBox = new GroupBox();
             this.topMostCheckBox = new CheckBox();
             this.durationLabel = new Label();
@@ -42,6 +52,7 @@ namespace simple_picker
             this.okButton = new Button();
             this.cancelButton = new Button();
             this.hotkeyGroupBox.SuspendLayout();
+            this.colorSelectorHotkeyGroupBox.SuspendLayout();
             this.popupGroupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.durationNumericUpDown)).BeginInit();
             this.SuspendLayout();
@@ -56,7 +67,7 @@ namespace simple_picker
             this.hotkeyGroupBox.Size = new Size(360, 100);
             this.hotkeyGroupBox.TabIndex = 0;
             this.hotkeyGroupBox.TabStop = false;
-            this.hotkeyGroupBox.Text = "Global Hotkey";
+            this.hotkeyGroupBox.Text = "Color Picker Hotkey";
 
             // hotkeyComboBox
             this.hotkeyComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -99,14 +110,67 @@ namespace simple_picker
             this.shiftModifierCheckBox.Text = "Shift";
             this.shiftModifierCheckBox.UseVisualStyleBackColor = true;
 
+            // colorSelectorHotkeyGroupBox
+            this.colorSelectorHotkeyGroupBox.Controls.Add(this.colorSelectorShiftModifierCheckBox);
+            this.colorSelectorHotkeyGroupBox.Controls.Add(this.colorSelectorAltModifierCheckBox);
+            this.colorSelectorHotkeyGroupBox.Controls.Add(this.colorSelectorControlModifierCheckBox);
+            this.colorSelectorHotkeyGroupBox.Controls.Add(this.colorSelectorHotkeyComboBox);
+            this.colorSelectorHotkeyGroupBox.Location = new Point(12, 125);
+            this.colorSelectorHotkeyGroupBox.Name = "colorSelectorHotkeyGroupBox";
+            this.colorSelectorHotkeyGroupBox.Size = new Size(360, 100);
+            this.colorSelectorHotkeyGroupBox.TabIndex = 1;
+            this.colorSelectorHotkeyGroupBox.TabStop = false;
+            this.colorSelectorHotkeyGroupBox.Text = "Color Selector Hotkey";
+
+            // colorSelectorHotkeyComboBox
+            this.colorSelectorHotkeyComboBox.DropDownStyle = ComboBoxStyle.DropDownList;
+            this.colorSelectorHotkeyComboBox.FormattingEnabled = true;
+            this.colorSelectorHotkeyComboBox.Items.AddRange(new object[] {
+                "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12",
+                "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+                "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D0"
+            });
+            this.colorSelectorHotkeyComboBox.Location = new Point(15, 25);
+            this.colorSelectorHotkeyComboBox.Name = "colorSelectorHotkeyComboBox";
+            this.colorSelectorHotkeyComboBox.Size = new Size(100, 23);
+            this.colorSelectorHotkeyComboBox.TabIndex = 0;
+
+            // colorSelectorControlModifierCheckBox
+            this.colorSelectorControlModifierCheckBox.AutoSize = true;
+            this.colorSelectorControlModifierCheckBox.Checked = true;
+            this.colorSelectorControlModifierCheckBox.Location = new Point(15, 60);
+            this.colorSelectorControlModifierCheckBox.Name = "colorSelectorControlModifierCheckBox";
+            this.colorSelectorControlModifierCheckBox.Size = new Size(63, 19);
+            this.colorSelectorControlModifierCheckBox.TabIndex = 1;
+            this.colorSelectorControlModifierCheckBox.Text = "Control";
+            this.colorSelectorControlModifierCheckBox.UseVisualStyleBackColor = true;
+
+            // colorSelectorAltModifierCheckBox
+            this.colorSelectorAltModifierCheckBox.AutoSize = true;
+            this.colorSelectorAltModifierCheckBox.Location = new Point(90, 60);
+            this.colorSelectorAltModifierCheckBox.Name = "colorSelectorAltModifierCheckBox";
+            this.colorSelectorAltModifierCheckBox.Size = new Size(40, 19);
+            this.colorSelectorAltModifierCheckBox.TabIndex = 2;
+            this.colorSelectorAltModifierCheckBox.Text = "Alt";
+            this.colorSelectorAltModifierCheckBox.UseVisualStyleBackColor = true;
+
+            // colorSelectorShiftModifierCheckBox
+            this.colorSelectorShiftModifierCheckBox.AutoSize = true;
+            this.colorSelectorShiftModifierCheckBox.Location = new Point(145, 60);
+            this.colorSelectorShiftModifierCheckBox.Name = "colorSelectorShiftModifierCheckBox";
+            this.colorSelectorShiftModifierCheckBox.Size = new Size(50, 19);
+            this.colorSelectorShiftModifierCheckBox.TabIndex = 3;
+            this.colorSelectorShiftModifierCheckBox.Text = "Shift";
+            this.colorSelectorShiftModifierCheckBox.UseVisualStyleBackColor = true;
+
             // popupGroupBox
             this.popupGroupBox.Controls.Add(this.durationNumericUpDown);
             this.popupGroupBox.Controls.Add(this.durationLabel);
             this.popupGroupBox.Controls.Add(this.topMostCheckBox);
-            this.popupGroupBox.Location = new Point(12, 125);
+            this.popupGroupBox.Location = new Point(12, 240);
             this.popupGroupBox.Name = "popupGroupBox";
             this.popupGroupBox.Size = new Size(360, 80);
-            this.popupGroupBox.TabIndex = 1;
+            this.popupGroupBox.TabIndex = 2;
             this.popupGroupBox.TabStop = false;
             this.popupGroupBox.Text = "Popup Settings";
 
@@ -138,19 +202,19 @@ namespace simple_picker
             this.durationNumericUpDown.Value = new decimal(new int[] { 5000, 0, 0, 0 });
 
             // okButton
-            this.okButton.Location = new Point(216, 220);
+            this.okButton.Location = new Point(216, 335);
             this.okButton.Name = "okButton";
             this.okButton.Size = new Size(75, 25);
-            this.okButton.TabIndex = 2;
+            this.okButton.TabIndex = 3;
             this.okButton.Text = "OK";
             this.okButton.UseVisualStyleBackColor = true;
             this.okButton.Click += new EventHandler(this.okButton_Click);
 
             // cancelButton
-            this.cancelButton.Location = new Point(297, 220);
+            this.cancelButton.Location = new Point(297, 335);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new Size(75, 25);
-            this.cancelButton.TabIndex = 3;
+            this.cancelButton.TabIndex = 4;
             this.cancelButton.Text = "Cancel";
             this.cancelButton.UseVisualStyleBackColor = true;
             this.cancelButton.Click += new EventHandler(this.cancelButton_Click);
@@ -158,10 +222,11 @@ namespace simple_picker
             // SettingsForm
             this.AutoScaleDimensions = new SizeF(7F, 15F);
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(384, 257);
+            this.ClientSize = new Size(384, 372);
             this.Controls.Add(this.cancelButton);
             this.Controls.Add(this.okButton);
             this.Controls.Add(this.popupGroupBox);
+            this.Controls.Add(this.colorSelectorHotkeyGroupBox);
             this.Controls.Add(this.hotkeyGroupBox);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -172,6 +237,8 @@ namespace simple_picker
             this.Text = "SimplePicker Settings";
             this.hotkeyGroupBox.ResumeLayout(false);
             this.hotkeyGroupBox.PerformLayout();
+            this.colorSelectorHotkeyGroupBox.ResumeLayout(false);
+            this.colorSelectorHotkeyGroupBox.PerformLayout();
             this.popupGroupBox.ResumeLayout(false);
             this.popupGroupBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.durationNumericUpDown)).EndInit();

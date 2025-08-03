@@ -4,8 +4,15 @@ namespace simple_picker
 {
     public class Settings
     {
-        public Keys HotkeyKey { get; set; } = Keys.F1;
-        public int HotkeyModifiers { get; set; } = 2; // MOD_CONTROL
+        // Color Picker Hotkey - Ctrl+Shift+C
+        public Keys HotkeyKey { get; set; } = Keys.C;
+        public int HotkeyModifiers { get; set; } = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
+        
+        // Color Selector Hotkey - Ctrl+Shift+S
+        public Keys ColorSelectorHotkeyKey { get; set; } = Keys.S;
+        public int ColorSelectorHotkeyModifiers { get; set; } = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
+        
+        // Popup settings
         public int PopupX { get; set; } = -1; // -1 means center
         public int PopupY { get; set; } = -1; // -1 means center
         public bool TopMost { get; set; } = true;

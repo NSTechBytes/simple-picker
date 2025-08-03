@@ -121,7 +121,12 @@ namespace simple_picker
         private void InitializeGlobalHotkey()
         {
             globalHotkey = new GlobalHotkey();
-            globalHotkey.RegisterHotkey(settings.HotkeyModifiers, settings.HotkeyKey, TriggerColorPicker);
+            
+            // Register color picker hotkey
+            globalHotkey.RegisterColorPickerHotkey(settings.HotkeyModifiers, settings.HotkeyKey, TriggerColorPicker);
+            
+            // Register color selector hotkey
+            globalHotkey.RegisterColorSelectorHotkey(settings.ColorSelectorHotkeyModifiers, settings.ColorSelectorHotkeyKey, ShowColorSelector);
         }
 
         private void TriggerColorPicker()
@@ -153,7 +158,7 @@ namespace simple_picker
             if (settingsForm.ShowDialog() == DialogResult.OK)
             {
                 SaveSettings();
-                // Restart hotkey with new settings
+                // Restart hotkeys with new settings
                 globalHotkey?.Dispose();
                 InitializeGlobalHotkey();
             }
