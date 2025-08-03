@@ -18,7 +18,7 @@
 
 ; General settings
 Name "${APPNAME}"
-OutFile "SimplePicker-Setup.exe"
+OutFile "Setup\SimplePicker.exe"
 InstallDir "$PROGRAMFILES\${APPNAME}"
 InstallDirRegKey HKCU "Software\${APPNAME}" ""
 RequestExecutionLevel admin
@@ -26,11 +26,11 @@ RequestExecutionLevel admin
 ; Interface Configuration
 !define MUI_HEADERIMAGE
 !define MUI_HEADERIMAGE_RIGHT
-!define MUI_HEADERIMAGE_BITMAP "header.bmp"  ; BMP image for header (right side)
-!define MUI_WELCOMEFINISHPAGE_BITMAP "wizard.bmp"  ; Large image on welcome/finish pages
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "wizard.bmp"  ; Large image on uninstaller welcome/finish pages
-!define MUI_ICON "icon.ico"
-!define MUI_UNICON "icon.ico"
+!define MUI_HEADERIMAGE_BITMAP "images\header.bmp"  ; BMP image for header (right side)
+!define MUI_WELCOMEFINISHPAGE_BITMAP "images\wizard.bmp"  ; Large image on welcome/finish pages
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "images\wizard.bmp"  ; Large image on uninstaller welcome/finish pages
+!define MUI_ICON "images\icon.ico"
+!define MUI_UNICON "images\icon.ico"
 !define MUI_ABORTWARNING
 
 ; Pages
