@@ -21,9 +21,11 @@ namespace simple_picker
         private static extern bool BitBlt(IntPtr hdc, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
 
         private const int SRCCOPY = 0x00CC0020;
-        private const int MAGNIFIER_SIZE = 200;
+        private const int MAGNIFIER_SIZE = 150;
         private const int CAPTURE_SIZE = 20;
         private const int ZOOM_FACTOR = 10;
+        private const int BORDER_WIDTH = 2;
+        private const int BORDER_PADDING = 5;
 
         private Point lastCursorPos = Point.Empty;
         private Bitmap? magnifierBitmap;
@@ -37,7 +39,9 @@ namespace simple_picker
 
         private void SetupMagnifier()
         {
-            this.Size = new Size(MAGNIFIER_SIZE + 20, MAGNIFIER_SIZE + 20);
+            // Calculate total form size needed
+            int totalSize = MAGNIFIER_SIZE + (BORDER_PADDING * 2) + (BORDER_WIDTH * 4); // Extra space for border
+            this.Size = new Size(totalSize, totalSize);
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
             this.ShowInTaskbar = false;
@@ -155,14 +159,37 @@ namespace simple_picker
         {
             if (magnifierBitmap != null)
             {
-                // Draw border
-                using (Pen borderPen = new Pen(Color.White, 2))
+                // Draw black background
+                e.Graphics.Clear(Color.Black);
+
+                // Calculate border position - need to account for pen width
+                int borderX = BORDER_PADDING;
+                int borderY = BORDER_PADDING;
+                int borderWidth = this.ClientSize.Width - (BORDER_PADDING * 2);
+                int borderHeight = this.ClientSize.Height - (BORDER_PADDING * 2);
+
+                // Draw white border
+                using (Pen borderPen = new Pen(Color.White, BORDER_WIDTH))
                 {
-                    e.Graphics.DrawRectangle(borderPen, 8, 8, MAGNIFIER_SIZE + 2, MAGNIFIER_SIZE + 2);
+                    e.Graphics.DrawRectangle(borderPen, borderX, borderY, borderWidth, borderHeight);
                 }
 
-                // Draw magnifier content
-                e.Graphics.DrawImage(magnifierBitmap, 10, 10);
+                // Draw magnifier content inside the border - centered
+                int contentX = BORDER_PADDING + BORDER_WIDTH;
+                int contentY = BORDER_PADDING + BORDER_WIDTH;
+
+                // Calculate available space inside border for content
+                int availableWidth = borderWidth - (BORDER_WIDTH * 2);
+                int availableHeight = borderHeight - (BORDER_WIDTH * 2);
+
+                // Scale the magnifier content to fit inside the border if needed
+                int drawWidth = Math.Min(MAGNIFIER_SIZE, availableWidth);
+                int drawHeight = Math.Min(MAGNIFIER_SIZE, availableHeight);
+
+                e.Graphics.DrawImage(magnifierBitmap,
+                    new Rectangle(contentX, contentY, drawWidth, drawHeight),
+                    new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
+                    GraphicsUnit.Pixel);
             }
             base.OnPaint(e);
         }
@@ -182,7 +209,7 @@ namespace simple_picker
             this.SuspendLayout();
             this.AutoScaleDimensions = new SizeF(7F, 15F);
             this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(220, 220);
+            this.ClientSize = new Size(200, 200);
             this.Name = "MagnifierForm";
             this.Text = "Magnifier";
             this.ResumeLayout(false);

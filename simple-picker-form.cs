@@ -65,7 +65,7 @@ namespace simple_picker
             {
                 Icon = CreateTrayIcon(),
                 ContextMenuStrip = CreateContextMenu(),
-                Text = "SimplePicker - Click to pick colors",
+                Text = "SimplePicker - Double Click to select colors",
                 Visible = true
             };
 

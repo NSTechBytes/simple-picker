@@ -47,6 +47,21 @@ namespace simple_picker
             this.StartPosition = FormStartPosition.CenterParent;
             this.Size = new Size(750, 550);
 
+            // Method 2: Load icon from file path
+            try
+            {
+                string iconPath = Path.Combine(Application.StartupPath, "resources", "your_icon.ico");
+                if (File.Exists(iconPath))
+                {
+                    this.Icon = new Icon(iconPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle icon loading error gracefully
+                System.Diagnostics.Debug.WriteLine($"Could not load icon: {ex.Message}");
+            }
+
             // Enhanced double buffering to reduce flickering
             this.SetStyle(ControlStyles.AllPaintingInWmPaint |
                          ControlStyles.UserPaint |
@@ -57,6 +72,7 @@ namespace simple_picker
             // Set background color for better appearance
             this.BackColor = SystemColors.Control;
         }
+
 
         private void CreateColorWheel()
         {
