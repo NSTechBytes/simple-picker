@@ -28,14 +28,14 @@ namespace simple_picker
             {
                 string response = await httpClient.GetStringAsync(settings.UpdateUrl);
                 
-                // Parse version from INI format
-                var match = Regex.Match(response, @"version\s*=\s*(.+)", RegexOptions.IgnoreCase);
+                // Parse version from INI format - improved regex
+                var match = Regex.Match(response, @"version\s*=\s*[""']?([^""'\r\n]+)[""']?", RegexOptions.IgnoreCase);
                 if (!match.Success)
                 {
                     return new UpdateResult 
                     { 
                         Success = false, 
-                        ErrorMessage = "Unable to parse version information from remote server" 
+                        ErrorMessage = "Unable to parse version information from remote server. Response: " + response.Substring(0, Math.Min(100, response.Length)) 
                     };
                 }
 
@@ -44,14 +44,26 @@ namespace simple_picker
                 // Get current version from registry
                 string currentVersionString = settings.CurrentVersion;
                 
+                // Debug logging
+                System.Diagnostics.Debug.WriteLine($"Update Check - Current: '{currentVersionString}', Latest: '{latestVersion}'");
+                
                 try 
                 {
-                    Version current = new Version(currentVersionString);
-                    Version latest = new Version(latestVersion);
+                    // Normalize version strings by ensuring they have at least 2 parts (major.minor)
+                    string normalizedCurrent = NormalizeVersion(currentVersionString);
+                    string normalizedLatest = NormalizeVersion(latestVersion);
+                    
+                    Version current = new Version(normalizedCurrent);
+                    Version latest = new Version(normalizedLatest);
+
+                    System.Diagnostics.Debug.WriteLine($"Normalized versions - Current: {current}, Latest: {latest}");
 
                     settings.LastUpdateCheck = DateTime.Now;
 
-                    if (latest > current)
+                    bool updateAvailable = latest > current;
+                    System.Diagnostics.Debug.WriteLine($"Update available: {updateAvailable}");
+
+                    if (updateAvailable)
                     {
                         return new UpdateResult
                         {
@@ -100,6 +112,31 @@ namespace simple_picker
             }
         }
 
+        /// <summary>
+        /// Normalizes version string to ensure it's compatible with System.Version
+        /// Ensures at least major.minor format (e.g., "1" becomes "1.0")
+        /// </summary>
+        private string NormalizeVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+                return "1.0";
+
+            // Remove any non-numeric characters except dots
+            string cleanVersion = Regex.Replace(version, @"[^\d\.]", "");
+            
+            // Split by dots and ensure we have at least 2 parts
+            string[] parts = cleanVersion.Split('.');
+            
+            // If we only have one part (like "1"), make it "1.0"
+            if (parts.Length == 1)
+            {
+                return parts[0] + ".0";
+            }
+            
+            // If we have 2 or more parts, take first 4 (major.minor.build.revision max for System.Version)
+            return string.Join(".", parts, 0, Math.Min(parts.Length, 4));
+        }
+
         public bool ShouldCheckForUpdates()
         {
             if (!settings.AutoCheckForUpdates)
@@ -109,7 +146,9 @@ namespace simple_picker
                 return true;
 
             // Changed from days to seconds
-            return DateTime.Now.Subtract(settings.LastUpdateCheck).TotalSeconds >= settings.UpdateCheckIntervalSeconds;
+            bool shouldCheck = DateTime.Now.Subtract(settings.LastUpdateCheck).TotalSeconds >= settings.UpdateCheckIntervalSeconds;
+            System.Diagnostics.Debug.WriteLine($"Should check for updates: {shouldCheck} (Last check: {settings.LastUpdateCheck}, Interval: {settings.UpdateCheckIntervalSeconds}s)");
+            return shouldCheck;
         }
 
         public void ShowUpdateDialog(UpdateResult result)
@@ -123,8 +162,7 @@ namespace simple_picker
 
             if (result.UpdateAvailable)
             {
-                // Mark that dialog has been shown this session
-                settings.UpdateDialogShownThisSession = true;
+                System.Diagnostics.Debug.WriteLine("Showing update dialog");
                 
                 // Get app info from registry for display
                 var (appName, currentVersion, publisher) = settings.GetAppInfoFromRegistry();
@@ -155,6 +193,9 @@ namespace simple_picker
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
+                
+                // Mark that dialog has been shown this session AFTER user interaction
+                settings.UpdateDialogShownThisSession = true;
             }
             else if (result.ShowNoUpdateMessage)
             {
@@ -166,14 +207,24 @@ namespace simple_picker
 
         public async Task CheckForUpdatesInBackground()
         {
+            System.Diagnostics.Debug.WriteLine("CheckForUpdatesInBackground called");
+            
             if (!ShouldCheckForUpdates())
+            {
+                System.Diagnostics.Debug.WriteLine("Should not check for updates, skipping");
                 return;
+            }
 
+            System.Diagnostics.Debug.WriteLine("Checking for updates in background...");
             var result = await CheckForUpdatesAsync();
+            
+            System.Diagnostics.Debug.WriteLine($"Update check result - Success: {result.Success}, UpdateAvailable: {result.UpdateAvailable}, DialogShownThisSession: {settings.UpdateDialogShownThisSession}");
             
             // Only show dialog if update is available AND dialog hasn't been shown this session
             if (result.Success && result.UpdateAvailable && !settings.UpdateDialogShownThisSession)
             {
+                System.Diagnostics.Debug.WriteLine("Attempting to show update dialog");
+                
                 // Use MainForm reference to show dialog on main thread
                 if (mainForm != null)
                 {
@@ -181,24 +232,12 @@ namespace simple_picker
                 }
                 else
                 {
-                    // Fallback method: Create a temporary invisible form to invoke on UI thread
-                    try
+                    // Fallback: Show dialog on UI thread
+                    if (Application.OpenForms.Count > 0)
                     {
-                        var tempForm = new Form { WindowState = FormWindowState.Minimized, ShowInTaskbar = false };
-                        tempForm.Load += (s, e) =>
+                        foreach (Form form in Application.OpenForms)
                         {
-                            tempForm.Hide();
-                            ShowUpdateDialog(result);
-                            tempForm.Close();
-                        };
-                        tempForm.Show();
-                    }
-                    catch
-                    {
-                        // Last resort: show on any available form
-                        if (Application.OpenForms.Count > 0)
-                        {
-                            foreach (Form form in Application.OpenForms)
+                            try
                             {
                                 if (form.InvokeRequired)
                                 {
@@ -210,15 +249,64 @@ namespace simple_picker
                                 }
                                 break;
                             }
+                            catch (Exception ex)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Error showing update dialog: {ex.Message}");
+                            }
                         }
-                        else
+                    }
+                    else
+                    {
+                        // Last resort: show directly (may not be on UI thread)
+                        try
                         {
-                            // If no forms available, show directly (may not be on UI thread)
                             ShowUpdateDialog(result);
+                        }
+                        catch (Exception ex)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"Error showing update dialog (direct): {ex.Message}");
                         }
                     }
                 }
             }
+            else
+            {
+                if (!result.Success)
+                    System.Diagnostics.Debug.WriteLine($"Update check failed: {result.ErrorMessage}");
+                else if (!result.UpdateAvailable)
+                    System.Diagnostics.Debug.WriteLine("No update available");
+                else if (settings.UpdateDialogShownThisSession)
+                    System.Diagnostics.Debug.WriteLine("Update dialog already shown this session");
+            }
+        }
+
+        /// <summary>
+        /// Force check for updates regardless of session state (useful for manual checks)
+        /// </summary>
+        public async Task<UpdateResult> ForceCheckForUpdatesAsync(bool showNoUpdateMessage = true)
+        {
+            System.Diagnostics.Debug.WriteLine("Force checking for updates...");
+            var result = await CheckForUpdatesAsync(showNoUpdateMessage);
+            
+            if (result.Success)
+            {
+                // Always show dialog for manual checks, regardless of session state
+                if (result.UpdateAvailable || showNoUpdateMessage)
+                {
+                    ShowUpdateDialog(result);
+                }
+            }
+            
+            return result;
+        }
+
+        /// <summary>
+        /// Reset the session state to allow showing update dialog again
+        /// </summary>
+        public void ResetSessionState()
+        {
+            settings.UpdateDialogShownThisSession = false;
+            System.Diagnostics.Debug.WriteLine("Update session state reset");
         }
 
         /// <summary>
@@ -238,7 +326,7 @@ namespace simple_picker
         public string GetVersionInfo()
         {
             var (appName, version, publisher) = settings.GetAppInfoFromRegistry();
-            return $"App: {appName}\nVersion: {version}\nPublisher: {publisher}\nSource: Registry (HKEY_CURRENT_USER\\Software\\SimplePicker)";
+            return $"App: {appName}\nVersion: {version}\nPublisher: {publisher}\nSource: Registry (HKEY_CURRENT_USER\\Software\\SimplePicker)\n\nUpdate Settings:\nAuto-check: {settings.AutoCheckForUpdates}\nInterval: {settings.UpdateCheckIntervalSeconds}s\nLast check: {settings.LastUpdateCheck}\nDialog shown this session: {settings.UpdateDialogShownThisSession}";
         }
     }
 
