@@ -8,7 +8,8 @@ namespace simple_picker
     {
         private Color selectedColor;
         private Settings settings;
-        private System.Windows.Forms.Timer? autoCloseTimer; // Fully qualified to fix ambiguity
+        private System.Windows.Forms.Timer? autoCloseTimer;
+        private bool isClosing = false; // Flag to prevent multiple close attempts
 
         public ColorResultForm(Color color, Settings settings)
         {
@@ -24,7 +25,7 @@ namespace simple_picker
             this.TopMost = settings.TopMost;
             this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
             this.StartPosition = FormStartPosition.Manual;
-            
+
             // Position the form
             if (settings.PopupX >= 0 && settings.PopupY >= 0)
             {
@@ -49,48 +50,102 @@ namespace simple_picker
         {
             if (settings.PopupDuration > 0)
             {
-                autoCloseTimer = new System.Windows.Forms.Timer(); // Fully qualified
+                autoCloseTimer = new System.Windows.Forms.Timer();
                 autoCloseTimer.Interval = settings.PopupDuration;
-                autoCloseTimer.Tick += (s, e) => {
-                    autoCloseTimer.Stop();
-                    this.Close();
-                };
+                autoCloseTimer.Tick += AutoCloseTimer_Tick;
                 autoCloseTimer.Start();
             }
         }
 
+        private void AutoCloseTimer_Tick(object? sender, EventArgs e)
+        {
+            if (!isClosing)
+            {
+                isClosing = true;
+                autoCloseTimer?.Stop();
+                this.Close();
+            }
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            isClosing = true;
+            autoCloseTimer?.Stop();
+            base.OnFormClosing(e);
+        }
+
         private void copyButton_Click(object sender, EventArgs e)
         {
+            // Stop auto-close timer when user interacts with the form
+            autoCloseTimer?.Stop();
+
             string rgbText = $"{selectedColor.R}, {selectedColor.G}, {selectedColor.B}";
-            Clipboard.SetText(rgbText);
-            
-            // Show brief feedback
-            copyButton.Text = "Copied!";
-            System.Windows.Forms.Timer feedbackTimer = new System.Windows.Forms.Timer(); // Fully qualified
-            feedbackTimer.Interval = 1000;
-            feedbackTimer.Tick += (s, args) => {
-                copyButton.Text = "Copy RGB";
-                feedbackTimer.Stop();
-                feedbackTimer.Dispose();
-            };
-            feedbackTimer.Start();
+
+            try
+            {
+                Clipboard.SetText(rgbText);
+
+                // Show brief feedback
+                copyButton.Text = "Copied!";
+                System.Windows.Forms.Timer feedbackTimer = new System.Windows.Forms.Timer();
+                feedbackTimer.Interval = 1000;
+                feedbackTimer.Tick += (s, args) => {
+                    if (!isClosing)
+                    {
+                        copyButton.Text = "Copy RGB";
+                    }
+                    feedbackTimer.Stop();
+                    feedbackTimer.Dispose();
+                };
+                feedbackTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy to clipboard: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         private void copyHexButton_Click(object sender, EventArgs e)
         {
+            // Stop auto-close timer when user interacts with the form
+            autoCloseTimer?.Stop();
+
             string hexText = $"#{selectedColor.R:X2}{selectedColor.G:X2}{selectedColor.B:X2}";
-            Clipboard.SetText(hexText);
-            
-            // Show brief feedback
-            copyHexButton.Text = "Copied!";
-            System.Windows.Forms.Timer feedbackTimer = new System.Windows.Forms.Timer(); // Fully qualified
-            feedbackTimer.Interval = 1000;
-            feedbackTimer.Tick += (s, args) => {
-                copyHexButton.Text = "Copy HEX";
-                feedbackTimer.Stop();
-                feedbackTimer.Dispose();
-            };
-            feedbackTimer.Start();
+
+            try
+            {
+                Clipboard.SetText(hexText);
+
+                // Show brief feedback
+                copyHexButton.Text = "Copied!";
+                System.Windows.Forms.Timer feedbackTimer = new System.Windows.Forms.Timer();
+                feedbackTimer.Interval = 1000;
+                feedbackTimer.Tick += (s, args) => {
+                    if (!isClosing)
+                    {
+                        copyHexButton.Text = "Copy HEX";
+                    }
+                    feedbackTimer.Stop();
+                    feedbackTimer.Dispose();
+                };
+                feedbackTimer.Start();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to copy to clipboard: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                autoCloseTimer?.Stop();
+                autoCloseTimer?.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

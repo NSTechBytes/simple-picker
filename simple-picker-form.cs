@@ -265,10 +265,16 @@ namespace simple_picker
             // Show the color result form only if enabled
             if (settings.ShowPopupOnPick)
             {
-                using (ColorResultForm resultForm = new ColorResultForm(color, settings))
-                {
-                    resultForm.Show();
-                }
+                // Create and show the form without using 'using' statement
+                // The form will dispose itself when closed due to auto-close timer or user action
+                ColorResultForm resultForm = new ColorResultForm(color, settings);
+
+                // Use Show() for non-blocking popup that can auto-close
+                // Don't use ShowDialog() as it would block the main thread
+                resultForm.Show();
+
+                // Bring to front to ensure visibility
+                resultForm.BringToFront();
             }
         }
 

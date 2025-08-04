@@ -15,21 +15,6 @@ namespace simple_picker
         private Button copyHexButton = null!;
         private Button closeButton = null!;
 
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                if (components != null)
-                {
-                    components.Dispose();
-                }
-                // Dispose timer
-                autoCloseTimer?.Stop();
-                autoCloseTimer?.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
         private void InitializeComponent()
         {
             this.ShowInTaskbar = false;
@@ -91,7 +76,13 @@ namespace simple_picker
             this.closeButton.TabIndex = 5;
             this.closeButton.Text = "Close";
             this.closeButton.UseVisualStyleBackColor = true;
-            this.closeButton.Click += (s, e) => this.Close();
+            this.closeButton.Click += (s, e) => {
+                if (!isClosing)
+                {
+                    isClosing = true;
+                    this.Close();
+                }
+            };
 
             // ColorResultForm
             this.AutoScaleDimensions = new SizeF(7F, 15F);
@@ -110,6 +101,10 @@ namespace simple_picker
             this.ShowIcon = false;
             this.StartPosition = FormStartPosition.Manual;
             this.Text = "Color Picked";
+            
+            // Prevent form from closing immediately by giving it focus
+            this.Activated += (s, e) => this.BringToFront();
+            
             this.ResumeLayout(false);
             this.PerformLayout();
         }

@@ -30,7 +30,7 @@ namespace simple_picker
         // Auto-copy settings
         public bool AutoCopyEnabled { get; set; } = true;
         public ColorFormat AutoCopyFormat { get; set; } = ColorFormat.Hex;
-        public bool ShowCopyNotification { get; set; } = true;
+        public bool ShowCopyNotification { get; set; } = false;
         
         // Update settings - Changed from days to seconds
         public bool AutoCheckForUpdates { get; set; } = true;
@@ -173,7 +173,7 @@ namespace simple_picker
             ShowPopupOnPick = true;
             AutoCopyEnabled = true;
             AutoCopyFormat = ColorFormat.Hex;
-            ShowCopyNotification = true;
+            ShowCopyNotification = false;
             AutoCheckForUpdates = true;
             UpdateCheckIntervalSeconds = 30;
             LastUpdateCheck = DateTime.MinValue;
