@@ -15,7 +15,11 @@ namespace simple_picker
         private Settings settings = new Settings();
         private ColorPickerForm? colorPickerForm;
         private UpdateManager? updateManager;
-        private string settingsPath = "settings.json";
+
+        // Correctly define paths for settings file
+        private readonly string appDataDirectory;
+        private readonly string settingsPath;
+
         private System.Threading.Timer? updateTimer;
 
         [DllImport("user32.dll")]
@@ -23,6 +27,11 @@ namespace simple_picker
 
         public MainForm()
         {
+            // Initialize paths in the constructor
+            string userAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            appDataDirectory = Path.Combine(userAppData, "SimplePicker");
+            settingsPath = Path.Combine(appDataDirectory, "settings.json");
+
             SetProcessDPIAware();
             InitializeComponent();
             LoadSettings();
@@ -43,14 +52,16 @@ namespace simple_picker
                 else
                 {
                     settings = new Settings();
-                    SaveSettings();
+                    SaveSettings(); // Save initial settings if file doesn't exist
                 }
-                
+
                 // Reset session flag when loading settings (new program session)
                 settings.UpdateDialogShownThisSession = false;
             }
-            catch
+            catch (Exception ex) // Catch specific exceptions for better debugging
             {
+                // Optionally log the exception
+                // Console.WriteLine($"Error loading settings: {ex.Message}");
                 settings = new Settings();
                 settings.UpdateDialogShownThisSession = false;
             }
@@ -60,11 +71,18 @@ namespace simple_picker
         {
             try
             {
+                // Ensure the directory exists before saving the file
+                Directory.CreateDirectory(appDataDirectory);
+
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string json = JsonSerializer.Serialize(settings, options);
                 File.WriteAllText(settingsPath, json);
             }
-            catch { }
+            catch (Exception ex) // Catch specific exceptions for better debugging
+            {
+                // Optionally log the exception
+                // Console.WriteLine($"Error saving settings: {ex.Message}");
+            }
         }
 
         private void InitializeTrayIcon()
@@ -84,7 +102,8 @@ namespace simple_picker
         {
             try
             {
-                string iconPath = Path.Combine(Application.StartupPath, "resources", "icon.ico");
+                // It's safer to use the base directory of the application for resource paths
+                string iconPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "resources", "icon.ico");
                 return new Icon(iconPath);
             }
             catch
@@ -94,8 +113,14 @@ namespace simple_picker
                 using (Graphics g = Graphics.FromImage(bitmap))
                 {
                     g.Clear(Color.White);
-                    g.FillEllipse(new SolidBrush(Color.Blue), 2, 2, 12, 12);
-                    g.DrawEllipse(new Pen(Color.Black, 1), 2, 2, 12, 12);
+                    using (SolidBrush brush = new SolidBrush(Color.Blue))
+                    {
+                        g.FillEllipse(brush, 2, 2, 12, 12);
+                    }
+                    using (Pen pen = new Pen(Color.Black, 1))
+                    {
+                        g.DrawEllipse(pen, 2, 2, 12, 12);
+                    }
                 }
                 return Icon.FromHandle(bitmap.GetHicon());
             }
@@ -133,10 +158,10 @@ namespace simple_picker
         private void InitializeGlobalHotkey()
         {
             globalHotkey = new GlobalHotkey();
-            
+
             // Register color picker hotkey
             globalHotkey.RegisterColorPickerHotkey(settings.HotkeyModifiers, settings.HotkeyKey, TriggerColorPicker);
-            
+
             // Register color selector hotkey
             globalHotkey.RegisterColorSelectorHotkey(settings.ColorSelectorHotkeyModifiers, settings.ColorSelectorHotkeyKey, ShowColorSelector);
         }
@@ -144,10 +169,10 @@ namespace simple_picker
         private void InitializeUpdateManager()
         {
             updateManager = new UpdateManager(settings, this);
-            
+
             // Start initial update check after a short delay
             Task.Delay(2000).ContinueWith(async _ => await CheckForUpdatesInBackground());
-            
+
             // Set up periodic update checks using a timer
             SetupUpdateTimer();
         }
@@ -156,12 +181,12 @@ namespace simple_picker
         {
             // Dispose existing timer if any
             updateTimer?.Dispose();
-            
+
             if (settings.AutoCheckForUpdates)
             {
                 // Create timer that runs every interval specified in settings
                 int intervalMs = settings.UpdateCheckIntervalSeconds * 1000;
-                updateTimer = new System.Threading.Timer(async _ => await CheckForUpdatesInBackground(), 
+                updateTimer = new System.Threading.Timer(async _ => await CheckForUpdatesInBackground(),
                     null, intervalMs, intervalMs);
             }
         }
@@ -192,7 +217,7 @@ namespace simple_picker
                 this.Invoke(new Action<UpdateResult>(ShowUpdateDialogOnMainThread), result);
                 return;
             }
-            
+
             if (updateManager != null)
             {
                 updateManager.ShowUpdateDialog(result);
@@ -211,9 +236,11 @@ namespace simple_picker
 
         private void ShowColorSelector()
         {
-            ColorSelectorForm colorSelectorForm = new ColorSelectorForm();
-            colorSelectorForm.ColorSelected += OnColorSelected;
-            colorSelectorForm.ShowDialog();
+            using (ColorSelectorForm colorSelectorForm = new ColorSelectorForm())
+            {
+                colorSelectorForm.ColorSelected += OnColorSelected;
+                colorSelectorForm.ShowDialog();
+            }
         }
 
         private void OnColorSelected(Color color)
@@ -223,7 +250,7 @@ namespace simple_picker
             {
                 string colorString = ColorUtilities.ColorToString(color, settings.AutoCopyFormat);
                 bool copySuccess = ColorUtilities.CopyToClipboard(colorString);
-                
+
                 if (copySuccess && settings.ShowCopyNotification)
                 {
                     string formatName = ColorUtilities.GetFormatDisplayName(settings.AutoCopyFormat);
@@ -238,24 +265,28 @@ namespace simple_picker
             // Show the color result form only if enabled
             if (settings.ShowPopupOnPick)
             {
-                ColorResultForm resultForm = new ColorResultForm(color, settings);
-                resultForm.Show();
+                using (ColorResultForm resultForm = new ColorResultForm(color, settings))
+                {
+                    resultForm.Show();
+                }
             }
         }
 
         private void ShowSettings()
         {
-            SettingsForm settingsForm = new SettingsForm(settings);
-            if (settingsForm.ShowDialog() == DialogResult.OK)
+            using (SettingsForm settingsForm = new SettingsForm(settings))
             {
-                SaveSettings();
-                // Restart hotkeys with new settings
-                globalHotkey?.Dispose();
-                InitializeGlobalHotkey();
-                
-                // Reinitialize update manager and timer with new settings
-                updateManager = new UpdateManager(settings, this);
-                SetupUpdateTimer();
+                if (settingsForm.ShowDialog() == DialogResult.OK)
+                {
+                    SaveSettings();
+                    // Restart hotkeys with new settings
+                    globalHotkey?.Dispose();
+                    InitializeGlobalHotkey();
+
+                    // Reinitialize update manager and timer with new settings
+                    updateManager = new UpdateManager(settings, this);
+                    SetupUpdateTimer();
+                }
             }
         }
 
@@ -264,6 +295,7 @@ namespace simple_picker
             if (trayIcon != null)
             {
                 trayIcon.Visible = false;
+                trayIcon.Dispose();
             }
             globalHotkey?.Dispose();
             updateTimer?.Dispose();
@@ -272,7 +304,9 @@ namespace simple_picker
 
         protected override void SetVisibleCore(bool value)
         {
-            base.SetVisibleCore(false); // Keep form hidden
+            // Keep main form hidden to run as a tray application
+            base.SetVisibleCore(false);
         }
     }
+
 }

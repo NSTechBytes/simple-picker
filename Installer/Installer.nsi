@@ -142,8 +142,11 @@ Section "Uninstall"
     Delete "$INSTDIR\simple-picker.dll"
     Delete "$INSTDIR\simple-picker.deps.json"
     Delete "$INSTDIR\simple-picker.runtimeconfig.json"
-    Delete "$INSTDIR\settings.json"
     Delete "$INSTDIR\uninstall.exe"
+    
+    ; Remove user settings from AppData
+    Delete "$APPDATA\SimplePicker\settings.json"
+    RMDir "$APPDATA\SimplePicker"
     
     ; Remove resources directory
     RMDir /r "$INSTDIR\resources"
