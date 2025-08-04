@@ -132,6 +132,9 @@ SectionEnd
 
 ; Uninstaller section
 Section "Uninstall"
+    ; Remove startup registry entry (from HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run)
+    DeleteRegValue HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Run" "SimplePicker"
+    
     ; Remove registry keys
     DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
     DeleteRegKey HKCU "Software\${APPNAME}"

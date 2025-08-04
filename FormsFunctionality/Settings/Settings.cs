@@ -12,6 +12,10 @@ namespace simple_picker
         private const string APP_NAME_VALUE_NAME = "AppName";
         private const string PUBLISHER_VALUE_NAME = "Publisher";
         
+        // Startup registry constants
+        private const string STARTUP_REGISTRY_PATH = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
+        private const string STARTUP_APP_NAME = "SimplePicker";
+        
         // Color Picker Hotkey - Ctrl+Shift+C
         public Keys HotkeyKey { get; set; } = Keys.C;
         public int HotkeyModifiers { get; set; } = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
@@ -41,8 +45,12 @@ namespace simple_picker
         // Session tracking for update dialog
         public bool UpdateDialogShownThisSession { get; set; } = false;
         
-        // Startup settings
-        public bool RunAtStartup { get; set; } = false;
+        // Startup settings - Property that checks registry directly
+        public bool RunAtStartup
+        {
+            get => GetRunAtStartupFromRegistry();
+            set => SetRunAtStartupInRegistry(value);
+        }
 
         // Property to get current version from registry
         public string CurrentVersion
@@ -138,6 +146,68 @@ namespace simple_picker
         }
 
         /// <summary>
+        /// Gets the run at startup setting directly from Windows Registry
+        /// </summary>
+        /// <returns>True if the application is set to run at startup, false otherwise</returns>
+        private bool GetRunAtStartupFromRegistry()
+        {
+            try
+            {
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(STARTUP_REGISTRY_PATH))
+                {
+                    if (key != null)
+                    {
+                        string? startupValue = key.GetValue(STARTUP_APP_NAME)?.ToString();
+                        return !string.IsNullOrEmpty(startupValue);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error reading startup setting from registry: {ex.Message}");
+            }
+            
+            return false;
+        }
+
+        /// <summary>
+        /// Sets the run at startup setting directly in Windows Registry
+        /// </summary>
+        /// <param name="enable">True to enable startup, false to disable</param>
+        /// <returns>True if successful, false otherwise</returns>
+        private bool SetRunAtStartupInRegistry(bool enable)
+        {
+            try
+            {
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(STARTUP_REGISTRY_PATH, true))
+                {
+                    if (key != null)
+                    {
+                        if (enable)
+                        {
+                            string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                            // For .NET Core/5+ self-contained apps, the entry point might be a .dll
+                            // We need to point to the .exe launcher.
+                            exePath = exePath.Replace(".dll", ".exe");
+                            key.SetValue(STARTUP_APP_NAME, $"\"{exePath}\"");
+                        }
+                        else
+                        {
+                            key.DeleteValue(STARTUP_APP_NAME, false);
+                        }
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error setting startup registry: {ex.Message}");
+            }
+            
+            return false;
+        }
+
+        /// <summary>
         /// Initializes registry with default values if they don't exist
         /// </summary>
         public void InitializeRegistryIfNeeded()
@@ -179,6 +249,8 @@ namespace simple_picker
             LastUpdateCheck = DateTime.MinValue;
             UpdateUrl = "https://raw.githubusercontent.com/NSTechBytes/simple-picker/refs/heads/main/.github/version.ini";
             UpdateDialogShownThisSession = false;
+            
+            // Reset startup setting to false (disable startup)
             RunAtStartup = false;
             
             // Reset registry version to default

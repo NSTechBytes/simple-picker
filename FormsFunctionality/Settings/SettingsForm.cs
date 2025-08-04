@@ -41,7 +41,7 @@ namespace simple_picker
             autoCopyEnabledCheckBox.Checked = settings.AutoCopyEnabled;
             colorFormatComboBox.SelectedIndex = (int)settings.AutoCopyFormat;
             showCopyNotificationCheckBox.Checked = settings.ShowCopyNotification;
-            runAtStartupCheckBox.Checked = settings.RunAtStartup;
+            runAtStartupCheckBox.Checked = settings.RunAtStartup; // This now reads directly from registry
 
             // Updates Tab
             autoUpdateCheckBox.Checked = settings.AutoCheckForUpdates;
@@ -107,48 +107,12 @@ namespace simple_picker
             settings.AutoCopyFormat = (ColorFormat)colorFormatComboBox.SelectedIndex;
             settings.ShowCopyNotification = showCopyNotificationCheckBox.Checked;
             
-            bool oldRunAtStartup = settings.RunAtStartup;
+            // Handle startup setting - now managed by Settings class property
             settings.RunAtStartup = runAtStartupCheckBox.Checked;
-            if (oldRunAtStartup != settings.RunAtStartup)
-            {
-                SetStartupRegistry(settings.RunAtStartup);
-            }
 
             // Updates Tab
             settings.AutoCheckForUpdates = autoUpdateCheckBox.Checked;
             settings.UpdateCheckIntervalSeconds = (int)updateIntervalNumericUpDown.Value;
-        }
-
-        private void SetStartupRegistry(bool enable)
-        {
-            const string AppName = "SimplePicker";
-            const string RegistryPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(RegistryPath, true))
-                {
-                    if (key != null)
-                    {
-                        if (enable)
-                        {
-                            string exePath = Assembly.GetExecutingAssembly().Location;
-                            // For .NET Core/5+ self-contained apps, the entry point might be a .dll
-                            // We need to point to the .exe launcher.
-                            exePath = exePath.Replace(".dll", ".exe");
-                            key.SetValue(AppName, $"\"{exePath}\"");
-                        }
-                        else
-                        {
-                            key.DeleteValue(AppName, false);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Failed to update startup settings: {ex.Message}", 
-                    "Registry Error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            }
         }
 
         private void autoCopyEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -191,7 +155,8 @@ namespace simple_picker
             
             DialogResult result = MessageBox.Show(
                 $"Are you sure you want to reset all settings to their default values?\n\n" +
-                $"This will also reset the version in the registry to 1.0 (current: {currentVersion}).",
+                $"This will also reset the version in the registry to 1.0 (current: {currentVersion}) " +
+                $"and disable startup functionality.",
                 "Reset Settings Confirmation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
@@ -208,9 +173,17 @@ namespace simple_picker
 
         private void okButton_Click(object sender, EventArgs e)
         {
-            SaveSettingsFromUI();
-            this.DialogResult = DialogResult.OK;
-            this.Close();
+            try
+            {
+                SaveSettingsFromUI();
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error saving settings: {ex.Message}", 
+                    "Settings Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void cancelButton_Click(object sender, EventArgs e)

@@ -183,7 +183,7 @@ namespace simple_picker
                     {
                         Process.Start(new ProcessStartInfo
                         {
-                            FileName = "https://github.com/NSTechBytes/simple-picker/releases",
+                            FileName = "https://simple-picker.pages.dev/",
                             UseShellExecute = true
                         });
                     }
