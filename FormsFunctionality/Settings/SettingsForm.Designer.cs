@@ -266,7 +266,7 @@ namespace simple_picker
             // 
             lastUpdateCheckLabel.AutoSize = true;
             lastUpdateCheckLabel.ForeColor = SystemColors.GrayText;
-            lastUpdateCheckLabel.Location = new Point(166, 106);
+            lastUpdateCheckLabel.Location = new Point(177, 106);
             lastUpdateCheckLabel.Name = "lastUpdateCheckLabel";
             lastUpdateCheckLabel.Size = new Size(122, 20);
             lastUpdateCheckLabel.TabIndex = 4;
@@ -275,7 +275,7 @@ namespace simple_picker
             // 
             // checkForUpdatesButton
             // 
-            checkForUpdatesButton.Location = new Point(0, 100);
+            checkForUpdatesButton.Location = new Point(17, 100);
             checkForUpdatesButton.Margin = new Padding(3, 4, 3, 4);
             checkForUpdatesButton.Name = "checkForUpdatesButton";
             checkForUpdatesButton.Size = new Size(142, 33);
@@ -336,7 +336,7 @@ namespace simple_picker
             runAtStartupCheckBox.Location = new Point(17, 33);
             runAtStartupCheckBox.Margin = new Padding(3, 4, 3, 4);
             runAtStartupCheckBox.Name = "runAtStartupCheckBox";
-            runAtStartupCheckBox.Size = new Size(194, 24);
+            runAtStartupCheckBox.Size = new Size(212, 24);
             runAtStartupCheckBox.TabIndex = 0;
             runAtStartupCheckBox.Text = "Run SimplePicker at startup";
             runAtStartupCheckBox.UseVisualStyleBackColor = true;
@@ -392,7 +392,6 @@ namespace simple_picker
             MaximizeBox = false;
             MinimizeBox = false;
             Name = "SettingsForm";
-            ShowIcon = false;
             StartPosition = FormStartPosition.CenterParent;
             Text = "SimplePicker Settings";
             hotkeyGroupBox.ResumeLayout(false);
