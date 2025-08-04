@@ -8,6 +8,7 @@ namespace simple_picker
 {
     public partial class MagnifierForm : Form
     {
+        // P/Invoke declarations for screen capture
         [DllImport("user32.dll")]
         private static extern IntPtr GetDC(IntPtr hWnd);
 
@@ -20,6 +21,7 @@ namespace simple_picker
         [DllImport("gdi32.dll")]
         private static extern bool BitBlt(IntPtr hdc, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
 
+        // Constants for magnifier appearance and behavior
         private const int SRCCOPY = 0x00CC0020;
         private const int MAGNIFIER_SIZE = 150;
         private const int CAPTURE_SIZE = 20;
@@ -37,10 +39,13 @@ namespace simple_picker
             SetupMagnifier();
         }
 
+        /// <summary>
+        /// Configures the form to act as a borderless, topmost magnifier window.
+        /// </summary>
         private void SetupMagnifier()
         {
-            // Calculate total form size needed
-            int totalSize = MAGNIFIER_SIZE + (BORDER_PADDING * 2) + (BORDER_WIDTH * 4); // Extra space for border
+            // Calculate the total size of the form needed to accommodate the magnifier and its borders.
+            int totalSize = MAGNIFIER_SIZE + (BORDER_PADDING * 2) + (BORDER_WIDTH * 4);
             this.Size = new Size(totalSize, totalSize);
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
@@ -48,77 +53,84 @@ namespace simple_picker
             this.BackColor = Color.Black;
             this.StartPosition = FormStartPosition.Manual;
 
-            // Create bitmap for magnifier content
+            // Create the bitmap and graphics objects that will hold the magnified image.
             magnifierBitmap = new Bitmap(MAGNIFIER_SIZE, MAGNIFIER_SIZE);
             magnifierGraphics = Graphics.FromImage(magnifierBitmap);
+            // Use NearestNeighbor for a blocky, pixelated zoom effect.
             magnifierGraphics.InterpolationMode = InterpolationMode.NearestNeighbor;
             magnifierGraphics.PixelOffsetMode = PixelOffsetMode.Half;
         }
 
+        /// <summary>
+        /// Updates the magnifier's position and content based on the cursor's location.
+        /// </summary>
+        /// <param name="cursorPosition">The current position of the mouse cursor.</param>
         public void UpdateMagnifier(Point cursorPosition)
         {
             if (lastCursorPos == cursorPosition) return;
             lastCursorPos = cursorPosition;
 
-            // Position magnifier window
-            int offsetX = 30; // Offset from cursor
+            // Position the magnifier window with an offset from the cursor.
+            int offsetX = 30;
             int offsetY = 30;
 
-            // Adjust position to keep magnifier on screen
             int magnifierX = cursorPosition.X + offsetX;
             int magnifierY = cursorPosition.Y + offsetY;
 
-            // FIX: Add null checks for Screen.PrimaryScreen
-            if (magnifierX + this.Width > (Screen.PrimaryScreen?.Bounds.Width ?? 1920))
-                magnifierX = cursorPosition.X - this.Width - offsetX;
-            if (magnifierY + this.Height > (Screen.PrimaryScreen?.Bounds.Height ?? 1080))
-                magnifierY = cursorPosition.Y - this.Height - offsetY;
+            // Adjust the window position to ensure it stays within the screen bounds.
+            if (Screen.PrimaryScreen != null)
+            {
+                if (magnifierX + this.Width > Screen.PrimaryScreen.Bounds.Width)
+                    magnifierX = cursorPosition.X - this.Width - offsetX;
+                if (magnifierY + this.Height > Screen.PrimaryScreen.Bounds.Height)
+                    magnifierY = cursorPosition.Y - this.Height - offsetY;
+            }
 
             this.Location = new Point(magnifierX, magnifierY);
 
-            // Capture screen area around cursor
+            // Capture the screen area around the cursor and draw the magnified view.
             CaptureAndMagnify(cursorPosition);
-            this.Invalidate();
+            this.Invalidate(); // Force the form to repaint.
         }
 
+        /// <summary>
+        /// Captures a small area of the screen around the cursor and draws it magnified onto the bitmap.
+        /// </summary>
+        /// <param name="cursorPosition">The position of the cursor to center the capture on.</param>
         private void CaptureAndMagnify(Point cursorPosition)
         {
             if (magnifierGraphics == null) return;
 
             try
             {
-                // Clear the magnifier bitmap
+                // Clear the previous image.
                 magnifierGraphics.Clear(Color.Black);
 
-                // Calculate capture area
+                // Define the area on the screen to capture.
                 int captureX = cursorPosition.X - CAPTURE_SIZE / 2;
                 int captureY = cursorPosition.Y - CAPTURE_SIZE / 2;
 
-                // Get screen DC
+                // Get the device context for the entire screen.
                 IntPtr screenDC = GetDC(IntPtr.Zero);
-                IntPtr memDC = magnifierGraphics.GetHdc();
 
-                // Capture and scale the screen area
+                // Use a temporary bitmap to hold the captured screen portion.
                 using (Bitmap captureBitmap = new Bitmap(CAPTURE_SIZE, CAPTURE_SIZE))
                 {
                     using (Graphics captureGraphics = Graphics.FromImage(captureBitmap))
                     {
                         IntPtr captureDC = captureGraphics.GetHdc();
-
-                        // Copy screen pixels to capture bitmap
+                        // Copy the screen pixels into our temporary bitmap.
                         BitBlt(captureDC, 0, 0, CAPTURE_SIZE, CAPTURE_SIZE, screenDC, captureX, captureY, SRCCOPY);
-
                         captureGraphics.ReleaseHdc(captureDC);
                     }
 
-                    // Draw the captured area scaled up
-                    magnifierGraphics.ReleaseHdc(memDC);
+                    // Draw the captured image onto our main magnifier bitmap, scaling it up.
                     magnifierGraphics.DrawImage(captureBitmap,
                         new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
                         new Rectangle(0, 0, CAPTURE_SIZE, CAPTURE_SIZE),
                         GraphicsUnit.Pixel);
 
-                    // Draw crosshair in center
+                    // Draw the crosshair in the center.
                     DrawCrosshair();
                 }
 
@@ -126,10 +138,13 @@ namespace simple_picker
             }
             catch
             {
-                // Ignore errors during capture
+                // Ignore any errors that might occur during the screen capture process.
             }
         }
 
+        /// <summary>
+        /// Draws a crosshair and a center pixel indicator on the magnifier.
+        /// </summary>
         private void DrawCrosshair()
         {
             if (magnifierGraphics == null) return;
@@ -140,60 +155,58 @@ namespace simple_picker
                 int centerY = MAGNIFIER_SIZE / 2;
                 int crosshairSize = 10;
 
-                // Draw crosshair lines
-                magnifierGraphics.DrawLine(crosshairPen,
-                    centerX - crosshairSize, centerY,
-                    centerX + crosshairSize, centerY);
-                magnifierGraphics.DrawLine(crosshairPen,
-                    centerX, centerY - crosshairSize,
-                    centerX, centerY + crosshairSize);
+                // Draw horizontal and vertical lines for the crosshair.
+                magnifierGraphics.DrawLine(crosshairPen, centerX - crosshairSize, centerY, centerX + crosshairSize, centerY);
+                magnifierGraphics.DrawLine(crosshairPen, centerX, centerY - crosshairSize, centerX, centerY + crosshairSize);
 
-                // Draw center pixel outline
+                // Draw a rectangle indicating the area of the center pixel.
                 magnifierGraphics.DrawRectangle(crosshairPen,
                     centerX - ZOOM_FACTOR / 2, centerY - ZOOM_FACTOR / 2,
                     ZOOM_FACTOR, ZOOM_FACTOR);
             }
         }
 
+        /// <summary>
+        /// Overrides the default paint behavior to draw the custom magnifier view.
+        /// </summary>
         protected override void OnPaint(PaintEventArgs e)
         {
             if (magnifierBitmap != null)
             {
-                // Draw black background
                 e.Graphics.Clear(Color.Black);
 
-                // Calculate border position - need to account for pen width
+                // Define the outer border rectangle.
                 int borderX = BORDER_PADDING;
                 int borderY = BORDER_PADDING;
                 int borderWidth = this.ClientSize.Width - (BORDER_PADDING * 2);
                 int borderHeight = this.ClientSize.Height - (BORDER_PADDING * 2);
 
-                // Draw white border
+                // Draw the white border.
                 using (Pen borderPen = new Pen(Color.White, BORDER_WIDTH))
                 {
                     e.Graphics.DrawRectangle(borderPen, borderX, borderY, borderWidth, borderHeight);
                 }
 
-                // Draw magnifier content inside the border - centered
+                // Define the content area inside the border.
                 int contentX = BORDER_PADDING + BORDER_WIDTH;
                 int contentY = BORDER_PADDING + BORDER_WIDTH;
-
-                // Calculate available space inside border for content
                 int availableWidth = borderWidth - (BORDER_WIDTH * 2);
                 int availableHeight = borderHeight - (BORDER_WIDTH * 2);
 
-                // Scale the magnifier content to fit inside the border if needed
-                int drawWidth = Math.Min(MAGNIFIER_SIZE, availableWidth);
-                int drawHeight = Math.Min(MAGNIFIER_SIZE, availableHeight);
-
+                // **MODIFIED**
+                // Stretch the magnifier bitmap to fill the entire available content area.
+                // This will make the content appear "wide" as requested.
                 e.Graphics.DrawImage(magnifierBitmap,
-                    new Rectangle(contentX, contentY, drawWidth, drawHeight),
+                    new Rectangle(contentX, contentY, availableWidth, availableHeight),
                     new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
                     GraphicsUnit.Pixel);
             }
             base.OnPaint(e);
         }
 
+        /// <summary>
+        /// Cleans up managed and unmanaged resources.
+        /// </summary>
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -206,11 +219,13 @@ namespace simple_picker
 
         private void InitializeComponent()
         {
-            this.ShowInTaskbar = false;
             this.SuspendLayout();
-            this.AutoScaleDimensions = new SizeF(7F, 15F);
-            this.AutoScaleMode = AutoScaleMode.Font;
-            this.ClientSize = new Size(200, 200);
+            // 
+            // MagnifierForm
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(200, 200);
             this.Name = "MagnifierForm";
             this.Text = "Magnifier";
             this.ResumeLayout(false);

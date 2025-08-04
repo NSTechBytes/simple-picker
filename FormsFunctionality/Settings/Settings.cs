@@ -185,11 +185,4 @@ namespace simple_picker
             SetVersionInRegistry("1.0");
         }
     }
-
-    // Enum for color formats (simplified)
-    public enum ColorFormat
-    {
-        Hex, // #RRGGBB
-        RGB  // rgb(r, g, b)
-    }
 }

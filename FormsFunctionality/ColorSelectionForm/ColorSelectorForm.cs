@@ -106,7 +106,7 @@ namespace simple_picker
                             float hueValue = (float)(angle * 180 / Math.PI);
                             float satValue = (float)(distance / colorWheelRadius);
 
-                            Color pixelColor = HSBToColor(hueValue, satValue, 1.0f);
+                            Color pixelColor = ColorUtilities.HSBToColor(hueValue, satValue, 1.0f);
                             colorWheelBitmap.SetPixel(x, y, pixelColor);
                         }
                     }
@@ -147,8 +147,8 @@ namespace simple_picker
                 // Create gradient brush for smoother appearance - fill entire bitmap
                 using (LinearGradientBrush brush = new LinearGradientBrush(
                     new Rectangle(0, 0, brightnessBarBitmap.Width, brightnessBarBitmap.Height),
-                    HSBToColor(hue, saturation, 1.0f), // Bright at top
-                    HSBToColor(hue, saturation, 0.0f), // Dark at bottom
+                    ColorUtilities.HSBToColor(hue, saturation, 1.0f), // Bright at top
+                    ColorUtilities.HSBToColor(hue, saturation, 0.0f), // Dark at bottom
                     LinearGradientMode.Vertical))
                 {
                     // Fill the entire bitmap area
@@ -261,79 +261,9 @@ namespace simple_picker
             needsBrightnessBarRedraw = false;
         }
 
-        private Color HSBToColor(float hue, float saturation, float brightness)
-        {
-            if (saturation == 0)
-            {
-                int gray = (int)(brightness * 255);
-                return Color.FromArgb(gray, gray, gray);
-            }
-
-            float h = hue / 60f;
-            int i = (int)Math.Floor(h);
-            float f = h - i;
-            float p = brightness * (1 - saturation);
-            float q = brightness * (1 - saturation * f);
-            float t = brightness * (1 - saturation * (1 - f));
-
-            float r, g, b;
-            switch (i % 6)
-            {
-                case 0: r = brightness; g = t; b = p; break;
-                case 1: r = q; g = brightness; b = p; break;
-                case 2: r = p; g = brightness; b = t; break;
-                case 3: r = p; g = q; b = brightness; break;
-                case 4: r = t; g = p; b = brightness; break;
-                default: r = brightness; g = p; b = q; break;
-            }
-
-            return Color.FromArgb(
-                Math.Max(0, Math.Min(255, (int)(r * 255))),
-                Math.Max(0, Math.Min(255, (int)(g * 255))),
-                Math.Max(0, Math.Min(255, (int)(b * 255)))
-            );
-        }
-
-        private void ColorToHSB(Color color, out float h, out float s, out float b)
-        {
-            float r = color.R / 255f;
-            float g = color.G / 255f;
-            float bl = color.B / 255f;
-
-            float max = Math.Max(r, Math.Max(g, bl));
-            float min = Math.Min(r, Math.Min(g, bl));
-            float delta = max - min;
-
-            // Brightness
-            b = max;
-
-            // Saturation
-            s = max == 0 ? 0 : delta / max;
-
-            // Hue
-            if (delta == 0)
-            {
-                h = 0;
-            }
-            else if (max == r)
-            {
-                h = 60 * (((g - bl) / delta) % 6);
-            }
-            else if (max == g)
-            {
-                h = 60 * ((bl - r) / delta + 2);
-            }
-            else
-            {
-                h = 60 * ((r - g) / delta + 4);
-            }
-
-            if (h < 0) h += 360;
-        }
-
         private void UpdateSelectedColor()
         {
-            selectedColor = HSBToColor(hue, saturation, brightness);
+            selectedColor = ColorUtilities.HSBToColor(hue, saturation, brightness);
             UpdateBrightnessBar();
             needsColorWheelRedraw = true;
             needsBrightnessBarRedraw = true;
@@ -355,11 +285,11 @@ namespace simple_picker
             blueNumericUpDown.Value = selectedColor.B;
 
             // Update HEX value
-            hexTextBox.Text = $"#{selectedColor.R:X2}{selectedColor.G:X2}{selectedColor.B:X2}";
+            hexTextBox.Text = ColorUtilities.ColorToString(selectedColor, ColorFormat.Hex);
 
             // Update labels - Show both RGB and HEX values in the preview
             rgbValueLabel.Text = $"RGB({selectedColor.R}, {selectedColor.G}, {selectedColor.B})\n" +
-                                $"HEX: #{selectedColor.R:X2}{selectedColor.G:X2}{selectedColor.B:X2}";
+                                $"HEX: {hexTextBox.Text}";
 
             updatingFromCode = false;
 
@@ -380,7 +310,7 @@ namespace simple_picker
                 (int)blueNumericUpDown.Value
             );
 
-            ColorToHSB(newColor, out hue, out saturation, out brightness);
+            ColorUtilities.ColorToHSB(newColor, out hue, out saturation, out brightness);
             selectedColor = newColor;
             UpdateBrightnessBar();
             needsColorWheelRedraw = true;
@@ -402,7 +332,7 @@ namespace simple_picker
                     int b = int.Parse(hexText.Substring(4, 2), NumberStyles.HexNumber);
 
                     Color newColor = Color.FromArgb(r, g, b);
-                    ColorToHSB(newColor, out hue, out saturation, out brightness);
+                    ColorUtilities.ColorToHSB(newColor, out hue, out saturation, out brightness);
                     selectedColor = newColor;
                     UpdateBrightnessBar();
                     needsColorWheelRedraw = true;
@@ -527,16 +457,20 @@ namespace simple_picker
 
         private void OnCopyRGBButtonClick(object sender, EventArgs e)
         {
-            string rgbText = $"{selectedColor.R}, {selectedColor.G}, {selectedColor.B}";
-            Clipboard.SetText(rgbText);
-            ShowCopyFeedback(copyRGBButton, "✓");
+            string rgbText = ColorUtilities.ColorToString(selectedColor, ColorFormat.RGB);
+            if (ColorUtilities.CopyToClipboard(rgbText))
+            {
+                ShowCopyFeedback(copyRGBButton, "✓ Copied");
+            }
         }
 
         private void OnCopyHexButtonClick(object sender, EventArgs e)
         {
-            string hexText = hexTextBox.Text;
-            Clipboard.SetText(hexText);
-            ShowCopyFeedback(copyHexButton, "✓");
+            string hexText = ColorUtilities.ColorToString(selectedColor, ColorFormat.Hex);
+            if (ColorUtilities.CopyToClipboard(hexText))
+            {
+                ShowCopyFeedback(copyHexButton, "✓ Copied");
+            }
         }
 
         private void ShowCopyFeedback(Button button, string message)
@@ -561,6 +495,7 @@ namespace simple_picker
         {
             if (disposing)
             {
+                components?.Dispose();
                 colorWheelBitmap?.Dispose();
                 brightnessBarBitmap?.Dispose();
                 colorWheelWithIndicator?.Dispose();
