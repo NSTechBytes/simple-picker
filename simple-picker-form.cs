@@ -3,9 +3,8 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.IO;
-using System.Text.Json; // Using System.Text.Json instead of Newtonsoft.Json
+using System.Text.Json;
 using System.Threading.Tasks;
-using System.Threading;
 
 namespace simple_picker
 {
@@ -13,11 +12,11 @@ namespace simple_picker
     {
         private NotifyIcon? trayIcon;
         private GlobalHotkey? globalHotkey;
-        private Settings settings = new Settings(); // FIX: Initialize to avoid CS8618
+        private Settings settings = new Settings();
         private ColorPickerForm? colorPickerForm;
         private UpdateManager? updateManager;
         private string settingsPath = "settings.json";
-        private System.Threading.Timer? updateTimer; // Timer for periodic update checks
+        private System.Threading.Timer? updateTimer;
 
         [DllImport("user32.dll")]
         private static extern bool SetProcessDPIAware();
@@ -39,7 +38,7 @@ namespace simple_picker
                 if (File.Exists(settingsPath))
                 {
                     string json = File.ReadAllText(settingsPath);
-                    settings = System.Text.Json.JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
+                    settings = JsonSerializer.Deserialize<Settings>(json) ?? new Settings();
                 }
                 else
                 {
@@ -62,7 +61,7 @@ namespace simple_picker
             try
             {
                 var options = new JsonSerializerOptions { WriteIndented = true };
-                string json = System.Text.Json.JsonSerializer.Serialize(settings, options);
+                string json = JsonSerializer.Serialize(settings, options);
                 File.WriteAllText(settingsPath, json);
             }
             catch { }
@@ -112,8 +111,8 @@ namespace simple_picker
             ToolStripMenuItem colorSelector = new ToolStripMenuItem("Color Selector");
             colorSelector.Click += (s, e) => ShowColorSelector();
 
-            ToolStripMenuItem settings = new ToolStripMenuItem("Settings");
-            settings.Click += (s, e) => ShowSettings();
+            ToolStripMenuItem settingsItem = new ToolStripMenuItem("Settings");
+            settingsItem.Click += (s, e) => ShowSettings();
 
             ToolStripMenuItem checkUpdates = new ToolStripMenuItem("Check for Updates");
             checkUpdates.Click += async (s, e) => await CheckForUpdatesManually();
@@ -124,7 +123,7 @@ namespace simple_picker
             menu.Items.Add(pickColor);
             menu.Items.Add(colorSelector);
             menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add(settings);
+            menu.Items.Add(settingsItem);
             menu.Items.Add(checkUpdates);
             menu.Items.Add(new ToolStripSeparator());
             menu.Items.Add(exit);
@@ -144,7 +143,7 @@ namespace simple_picker
 
         private void InitializeUpdateManager()
         {
-            updateManager = new UpdateManager(settings, this); // Pass reference to MainForm
+            updateManager = new UpdateManager(settings, this);
             
             // Start initial update check after a short delay
             Task.Delay(2000).ContinueWith(async _ => await CheckForUpdatesInBackground());
@@ -172,7 +171,7 @@ namespace simple_picker
             if (updateManager != null)
             {
                 await updateManager.CheckForUpdatesInBackground();
-                SaveSettings(); // Save updated LastUpdateCheck and session flag
+                SaveSettings();
             }
         }
 
@@ -182,11 +181,10 @@ namespace simple_picker
             {
                 var result = await updateManager.CheckForUpdatesAsync(showNoUpdateMessage: true);
                 updateManager.ShowUpdateDialog(result);
-                SaveSettings(); // Save updated LastUpdateCheck
+                SaveSettings();
             }
         }
 
-        // Public method for UpdateManager to show dialogs on main thread
         public void ShowUpdateDialogOnMainThread(UpdateResult result)
         {
             if (this.InvokeRequired)
@@ -220,8 +218,29 @@ namespace simple_picker
 
         private void OnColorSelected(Color color)
         {
-            ColorResultForm resultForm = new ColorResultForm(color, settings);
-            resultForm.Show();
+            // Handle auto-copy functionality
+            if (settings.AutoCopyEnabled)
+            {
+                string colorString = ColorUtilities.ColorToString(color, settings.AutoCopyFormat);
+                bool copySuccess = ColorUtilities.CopyToClipboard(colorString);
+                
+                if (copySuccess && settings.ShowCopyNotification)
+                {
+                    string formatName = ColorUtilities.GetFormatDisplayName(settings.AutoCopyFormat);
+                    ColorUtilities.ShowNotification($"Copied to clipboard: {colorString}\n({formatName})");
+                }
+                else if (!copySuccess && settings.ShowCopyNotification)
+                {
+                    ColorUtilities.ShowNotification("Failed to copy color to clipboard");
+                }
+            }
+
+            // Show the color result form only if enabled
+            if (settings.ShowPopupOnPick)
+            {
+                ColorResultForm resultForm = new ColorResultForm(color, settings);
+                resultForm.Show();
+            }
         }
 
         private void ShowSettings()
@@ -255,7 +274,5 @@ namespace simple_picker
         {
             base.SetVisibleCore(false); // Keep form hidden
         }
-
-        // Removed duplicate Dispose method - only keeping the one in Designer.cs
     }
 }

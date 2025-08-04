@@ -1,5 +1,6 @@
 using System.Windows.Forms;
 using Microsoft.Win32;
+using System;
 
 namespace simple_picker
 {
@@ -24,6 +25,12 @@ namespace simple_picker
         public int PopupY { get; set; } = -1; // -1 means center
         public bool TopMost { get; set; } = true;
         public int PopupDuration { get; set; } = 5000; // milliseconds
+        public bool ShowPopupOnPick { get; set; } = true; // New setting to control popup visibility
+
+        // Auto-copy settings
+        public bool AutoCopyEnabled { get; set; } = true;
+        public ColorFormat AutoCopyFormat { get; set; } = ColorFormat.Hex;
+        public bool ShowCopyNotification { get; set; } = true;
         
         // Update settings - Changed from days to seconds
         public bool AutoCheckForUpdates { get; set; } = true;
@@ -51,11 +58,11 @@ namespace simple_picker
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
                 {
                     if (key != null)
                     {
-                        string version = key.GetValue(VERSION_VALUE_NAME)?.ToString();
+                        string? version = key.GetValue(VERSION_VALUE_NAME)?.ToString();
                         if (!string.IsNullOrEmpty(version))
                         {
                             return version;
@@ -82,7 +89,7 @@ namespace simple_picker
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY_PATH))
+                using (RegistryKey? key = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY_PATH))
                 {
                     if (key != null)
                     {
@@ -109,7 +116,7 @@ namespace simple_picker
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
                 {
                     if (key != null)
                     {
@@ -137,7 +144,7 @@ namespace simple_picker
         {
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
                 {
                     if (key == null)
                     {
@@ -163,6 +170,10 @@ namespace simple_picker
             PopupY = -1;
             TopMost = true;
             PopupDuration = 5000;
+            ShowPopupOnPick = true;
+            AutoCopyEnabled = true;
+            AutoCopyFormat = ColorFormat.Hex;
+            ShowCopyNotification = true;
             AutoCheckForUpdates = true;
             UpdateCheckIntervalSeconds = 30;
             LastUpdateCheck = DateTime.MinValue;
@@ -173,5 +184,12 @@ namespace simple_picker
             // Reset registry version to default
             SetVersionInRegistry("1.0");
         }
+    }
+
+    // Enum for color formats (simplified)
+    public enum ColorFormat
+    {
+        Hex, // #RRGGBB
+        RGB  // rgb(r, g, b)
     }
 }

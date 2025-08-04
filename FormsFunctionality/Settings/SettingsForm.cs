@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using System.Reflection;
+using System.Linq;
 
 namespace simple_picker
 {
@@ -14,38 +15,55 @@ namespace simple_picker
         public SettingsForm(Settings settings)
         {
             this.settings = settings;
-            this.updateManager = new UpdateManager(settings, null);
+            // The notification manager is not used in the settings form directly, so passing null.
+            this.updateManager = new UpdateManager(settings, null); 
             InitializeComponent();
             LoadSettingsToUI();
         }
 
         private void LoadSettingsToUI()
         {
-            // Color Picker Hotkey
+            // Hotkeys Tab
             hotkeyComboBox.SelectedItem = settings.HotkeyKey.ToString();
             controlModifierCheckBox.Checked = (settings.HotkeyModifiers & 2) != 0;
             altModifierCheckBox.Checked = (settings.HotkeyModifiers & 1) != 0;
             shiftModifierCheckBox.Checked = (settings.HotkeyModifiers & 4) != 0;
 
-            // Color Selector Hotkey
             colorSelectorHotkeyComboBox.SelectedItem = settings.ColorSelectorHotkeyKey.ToString();
             colorSelectorControlModifierCheckBox.Checked = (settings.ColorSelectorHotkeyModifiers & 2) != 0;
             colorSelectorAltModifierCheckBox.Checked = (settings.ColorSelectorHotkeyModifiers & 1) != 0;
             colorSelectorShiftModifierCheckBox.Checked = (settings.ColorSelectorHotkeyModifiers & 4) != 0;
 
-            // Popup Settings
+            // General Tab
             topMostCheckBox.Checked = settings.TopMost;
             durationNumericUpDown.Value = settings.PopupDuration;
+            showPopupOnPickCheckBox.Checked = settings.ShowPopupOnPick;
+            autoCopyEnabledCheckBox.Checked = settings.AutoCopyEnabled;
+            colorFormatComboBox.SelectedIndex = (int)settings.AutoCopyFormat;
+            showCopyNotificationCheckBox.Checked = settings.ShowCopyNotification;
+            runAtStartupCheckBox.Checked = settings.RunAtStartup;
 
-            // Update Settings - Changed to use seconds
+            // Updates Tab
             autoUpdateCheckBox.Checked = settings.AutoCheckForUpdates;
             updateIntervalNumericUpDown.Value = settings.UpdateCheckIntervalSeconds;
 
-            // Startup Settings
-            runAtStartupCheckBox.Checked = settings.RunAtStartup;
-
-            // Update last check display
+            // Update UI states
+            UpdateAutoCopyUIState();
+            UpdateAutoUpdateUIState();
             UpdateLastCheckLabel();
+        }
+
+        private void UpdateAutoCopyUIState()
+        {
+            colorFormatComboBox.Enabled = autoCopyEnabledCheckBox.Checked;
+            colorFormatLabel.Enabled = autoCopyEnabledCheckBox.Checked;
+            showCopyNotificationCheckBox.Enabled = autoCopyEnabledCheckBox.Checked;
+        }
+        
+        private void UpdateAutoUpdateUIState()
+        {
+            updateIntervalNumericUpDown.Enabled = autoUpdateCheckBox.Checked;
+            updateIntervalLabel.Enabled = autoUpdateCheckBox.Checked;
         }
 
         private void UpdateLastCheckLabel()
@@ -56,75 +74,72 @@ namespace simple_picker
             }
             else
             {
-                lastUpdateCheckLabel.Text = $"Last check: {settings.LastUpdateCheck:MM/dd/yyyy HH:mm:ss}";
+                lastUpdateCheckLabel.Text = $"Last check: {settings.LastUpdateCheck:g}";
             }
         }
 
         private void SaveSettingsFromUI()
         {
-            // Color Picker Hotkey
+            // Hotkeys Tab
             if (Enum.TryParse(hotkeyComboBox.SelectedItem?.ToString(), out Keys key))
             {
                 settings.HotkeyKey = key;
             }
-
             settings.HotkeyModifiers = 0;
             if (controlModifierCheckBox.Checked) settings.HotkeyModifiers |= 2;
             if (altModifierCheckBox.Checked) settings.HotkeyModifiers |= 1;
             if (shiftModifierCheckBox.Checked) settings.HotkeyModifiers |= 4;
 
-            // Color Selector Hotkey
             if (Enum.TryParse(colorSelectorHotkeyComboBox.SelectedItem?.ToString(), out Keys colorSelectorKey))
             {
                 settings.ColorSelectorHotkeyKey = colorSelectorKey;
             }
-
             settings.ColorSelectorHotkeyModifiers = 0;
             if (colorSelectorControlModifierCheckBox.Checked) settings.ColorSelectorHotkeyModifiers |= 2;
             if (colorSelectorAltModifierCheckBox.Checked) settings.ColorSelectorHotkeyModifiers |= 1;
             if (colorSelectorShiftModifierCheckBox.Checked) settings.ColorSelectorHotkeyModifiers |= 4;
 
-            // Popup Settings
+            // General Tab
             settings.TopMost = topMostCheckBox.Checked;
             settings.PopupDuration = (int)durationNumericUpDown.Value;
-
-            // Update Settings - Changed to use seconds
-            settings.AutoCheckForUpdates = autoUpdateCheckBox.Checked;
-            settings.UpdateCheckIntervalSeconds = (int)updateIntervalNumericUpDown.Value;
-
-            // Startup Settings
+            settings.ShowPopupOnPick = showPopupOnPickCheckBox.Checked;
+            settings.AutoCopyEnabled = autoCopyEnabledCheckBox.Checked;
+            settings.AutoCopyFormat = (ColorFormat)colorFormatComboBox.SelectedIndex;
+            settings.ShowCopyNotification = showCopyNotificationCheckBox.Checked;
+            
             bool oldRunAtStartup = settings.RunAtStartup;
             settings.RunAtStartup = runAtStartupCheckBox.Checked;
-            
-            // Apply startup setting if it changed
             if (oldRunAtStartup != settings.RunAtStartup)
             {
                 SetStartupRegistry(settings.RunAtStartup);
             }
+
+            // Updates Tab
+            settings.AutoCheckForUpdates = autoUpdateCheckBox.Checked;
+            settings.UpdateCheckIntervalSeconds = (int)updateIntervalNumericUpDown.Value;
         }
 
         private void SetStartupRegistry(bool enable)
         {
+            const string AppName = "SimplePicker";
+            const string RegistryPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
             try
             {
-                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true))
+                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(RegistryPath, true))
                 {
                     if (key != null)
                     {
-                        string appName = "SimplePicker";
                         if (enable)
                         {
                             string exePath = Assembly.GetExecutingAssembly().Location;
-                            if (exePath.EndsWith(".dll"))
-                            {
-                                // For .NET applications, we need the exe path
-                                exePath = exePath.Replace(".dll", ".exe");
-                            }
-                            key.SetValue(appName, $"\"{exePath}\"");
+                            // For .NET Core/5+ self-contained apps, the entry point might be a .dll
+                            // We need to point to the .exe launcher.
+                            exePath = exePath.Replace(".dll", ".exe");
+                            key.SetValue(AppName, $"\"{exePath}\"");
                         }
                         else
                         {
-                            key.DeleteValue(appName, false);
+                            key.DeleteValue(AppName, false);
                         }
                     }
                 }
@@ -136,6 +151,11 @@ namespace simple_picker
             }
         }
 
+        private void autoCopyEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateAutoCopyUIState();
+        }
+
         private async void checkForUpdatesButton_Click(object sender, EventArgs e)
         {
             checkForUpdatesButton.Enabled = false;
@@ -144,9 +164,8 @@ namespace simple_picker
             try
             {
                 var result = await updateManager.CheckForUpdatesAsync(showNoUpdateMessage: true);
-                updateManager.ShowUpdateDialog(result);
-
-                // Update the last check time display
+                // This will show the update dialog if an update is available.
+                updateManager.ShowUpdateDialog(result); 
                 UpdateLastCheckLabel();
             }
             catch (Exception ex)
@@ -163,27 +182,26 @@ namespace simple_picker
 
         private void autoUpdateCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            updateIntervalNumericUpDown.Enabled = autoUpdateCheckBox.Checked;
-            updateIntervalLabel.Enabled = autoUpdateCheckBox.Checked;
+            UpdateAutoUpdateUIState();
         }
 
         private void resetToDefaultsButton_Click(object sender, EventArgs e)
         {
-            var (appName, currentVersion, _) = settings.GetAppInfoFromRegistry();
+            var (_, currentVersion, _) = settings.GetAppInfoFromRegistry();
             
             DialogResult result = MessageBox.Show(
                 $"Are you sure you want to reset all settings to their default values?\n\n" +
-                $"This will also reset the version in registry to 1.0 (current: {currentVersion})",
-                "Reset Settings",
+                $"This will also reset the version in the registry to 1.0 (current: {currentVersion}).",
+                "Reset Settings Confirmation",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                MessageBoxIcon.Warning);
 
             if (result == DialogResult.Yes)
             {
                 settings.ResetToDefaults();
                 LoadSettingsToUI();
                 
-                MessageBox.Show("Settings have been reset to defaults.\nRegistry version has been reset to 1.0.", 
+                MessageBox.Show("Settings have been reset to their default values.", 
                     "Settings Reset", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -203,25 +221,9 @@ namespace simple_picker
 
         private void lastUpdateCheckLabel_Click(object sender, EventArgs e)
         {
-            // Show detailed version information when clicked
             string versionInfo = updateManager.GetVersionInfo();
             MessageBox.Show(versionInfo, "Version Information", 
                 MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        // Method to manually update registry version (for testing/debugging)
-        private void UpdateRegistryVersion(string newVersion)
-        {
-            if (settings.SetVersionInRegistry(newVersion))
-            {
-                MessageBox.Show($"Registry version updated to: {newVersion}", 
-                    "Version Updated", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-            else
-            {
-                MessageBox.Show("Failed to update registry version.", 
-                    "Update Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
         }
     }
 }
