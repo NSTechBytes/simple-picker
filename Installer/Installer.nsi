@@ -7,9 +7,9 @@
 !define VERSIONMAJOR 1
 !define VERSIONMINOR 0
 !define VERSIONBUILD 0
-!define HELPURL "http://www.yourcompany.com/support"
-!define UPDATEURL "http://www.yourcompany.com/updates"
-!define ABOUTURL "http://www.yourcompany.com/about"
+!define HELPURL "https://github.com/NSTechBytes/simple-picker"
+!define UPDATEURL "https://github.com/NSTechBytes/simple-picker"
+!define ABOUTURL "https://simple-picker.pages.dev/about"
 
 
 ; Include Modern UI
@@ -18,7 +18,7 @@
 
 ; General settings
 Name "${APPNAME}"
-OutFile "Setup\SimplePicker.exe"
+OutFile "Setup\SimplePicker_v${VersionMajor}.${VersionMinor}.exe"
 InstallDir "$PROGRAMFILES\${APPNAME}"
 InstallDirRegKey HKCU "Software\${APPNAME}" ""
 RequestExecutionLevel admin
@@ -68,7 +68,6 @@ Section "Core Application" SecCore
     File "..\bin\x86\Release\net8.0-windows\simple-picker.dll"
     File "..\bin\x86\Release\net8.0-windows\simple-picker.deps.json"
     File "..\bin\x86\Release\net8.0-windows\simple-picker.runtimeconfig.json"
-    File "..\bin\x86\Release\net8.0-windows\settings.json"
     
     ; Install resources directory
     SetOutPath "$INSTDIR\resources"
