@@ -17,7 +17,7 @@ namespace simple_picker
         {
             this.settings = settings;
             this.mainForm = mainForm;
-            
+
             // Initialize registry if needed
             settings.InitializeRegistryIfNeeded();
         }
@@ -27,32 +27,32 @@ namespace simple_picker
             try
             {
                 string response = await httpClient.GetStringAsync(settings.UpdateUrl);
-                
+
                 // Parse version from INI format - improved regex
                 var match = Regex.Match(response, @"version\s*=\s*[""']?([^""'\r\n]+)[""']?", RegexOptions.IgnoreCase);
                 if (!match.Success)
                 {
-                    return new UpdateResult 
-                    { 
-                        Success = false, 
-                        ErrorMessage = "Unable to parse version information from remote server. Response: " + response.Substring(0, Math.Min(100, response.Length)) 
+                    return new UpdateResult
+                    {
+                        Success = false,
+                        ErrorMessage = "Unable to parse version information from remote server. Response: " + response.Substring(0, Math.Min(100, response.Length))
                     };
                 }
 
                 string latestVersion = match.Groups[1].Value.Trim();
-                
+
                 // Get current version from registry
                 string currentVersionString = settings.CurrentVersion;
-                
+
                 // Debug logging
                 System.Diagnostics.Debug.WriteLine($"Update Check - Current: '{currentVersionString}', Latest: '{latestVersion}'");
-                
-                try 
+
+                try
                 {
                     // Normalize version strings by ensuring they have at least 2 parts (major.minor)
                     string normalizedCurrent = NormalizeVersion(currentVersionString);
                     string normalizedLatest = NormalizeVersion(latestVersion);
-                    
+
                     Version current = new Version(normalizedCurrent);
                     Version latest = new Version(normalizedLatest);
 
@@ -123,16 +123,16 @@ namespace simple_picker
 
             // Remove any non-numeric characters except dots
             string cleanVersion = Regex.Replace(version, @"[^\d\.]", "");
-            
+
             // Split by dots and ensure we have at least 2 parts
             string[] parts = cleanVersion.Split('.');
-            
+
             // If we only have one part (like "1"), make it "1.0"
             if (parts.Length == 1)
             {
                 return parts[0] + ".0";
             }
-            
+
             // If we have 2 or more parts, take first 4 (major.minor.build.revision max for System.Version)
             return string.Join(".", parts, 0, Math.Min(parts.Length, 4));
         }
@@ -155,7 +155,7 @@ namespace simple_picker
         {
             if (!result.Success)
             {
-                MessageBox.Show($"Update check failed: {result.ErrorMessage}", 
+                MessageBox.Show($"Update check failed: {result.ErrorMessage}",
                     "Update Check Failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -163,10 +163,10 @@ namespace simple_picker
             if (result.UpdateAvailable)
             {
                 System.Diagnostics.Debug.WriteLine("Showing update dialog");
-                
+
                 // Get app info from registry for display
                 var (appName, currentVersion, publisher) = settings.GetAppInfoFromRegistry();
-                
+
                 DialogResult dialogResult = MessageBox.Show(
                     $"A new version of {appName} is available!\n\n" +
                     $"Publisher: {publisher}\n" +
@@ -189,18 +189,18 @@ namespace simple_picker
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Unable to open browser: {ex.Message}", 
+                        MessageBox.Show($"Unable to open browser: {ex.Message}",
                             "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     }
                 }
-                
+
                 // Mark that dialog has been shown this session AFTER user interaction
                 settings.UpdateDialogShownThisSession = true;
             }
             else if (result.ShowNoUpdateMessage)
             {
                 var (appName, _, _) = settings.GetAppInfoFromRegistry();
-                MessageBox.Show($"You are using the latest version of {appName} ({result.CurrentVersion}).", 
+                MessageBox.Show($"You are using the latest version of {appName} ({result.CurrentVersion}).",
                     "No Updates Available", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
@@ -208,7 +208,7 @@ namespace simple_picker
         public async Task CheckForUpdatesInBackground()
         {
             System.Diagnostics.Debug.WriteLine("CheckForUpdatesInBackground called");
-            
+
             if (!ShouldCheckForUpdates())
             {
                 System.Diagnostics.Debug.WriteLine("Should not check for updates, skipping");
@@ -217,14 +217,14 @@ namespace simple_picker
 
             System.Diagnostics.Debug.WriteLine("Checking for updates in background...");
             var result = await CheckForUpdatesAsync();
-            
+
             System.Diagnostics.Debug.WriteLine($"Update check result - Success: {result.Success}, UpdateAvailable: {result.UpdateAvailable}, DialogShownThisSession: {settings.UpdateDialogShownThisSession}");
-            
+
             // Only show dialog if update is available AND dialog hasn't been shown this session
             if (result.Success && result.UpdateAvailable && !settings.UpdateDialogShownThisSession)
             {
                 System.Diagnostics.Debug.WriteLine("Attempting to show update dialog");
-                
+
                 // Use MainForm reference to show dialog on main thread
                 if (mainForm != null)
                 {
@@ -287,7 +287,7 @@ namespace simple_picker
         {
             System.Diagnostics.Debug.WriteLine("Force checking for updates...");
             var result = await CheckForUpdatesAsync(showNoUpdateMessage);
-            
+
             if (result.Success)
             {
                 // Always show dialog for manual checks, regardless of session state
@@ -296,7 +296,7 @@ namespace simple_picker
                     ShowUpdateDialog(result);
                 }
             }
-            
+
             return result;
         }
 

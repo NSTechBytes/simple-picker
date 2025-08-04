@@ -1,4 +1,4 @@
-[INFO] Build started at Mon 08/04/2025 12:48:47.02 
+[INFO] Build started at Mon 08/04/2025 13:33:43.98 
 [INFO] Using NSIS compiler at: C:\Program Files (x86)\NSIS\makensis.exe 
 [INFO] Compiling script: Installer.nsi 
  
@@ -15,10 +15,10 @@ Datablock optimizer saved 23043 bytes (~7.5%).
 Using zlib compression.
 
 EXE header size:              107008 / 37888 bytes
-Install code:                   5246 / 24200 bytes
-Install data:                 128926 / 739926 bytes
+Install code:                   5239 / 24200 bytes
+Install data:                 129548 / 741462 bytes
 Uninstall code+data:           45508 / 110047 bytes
-CRC (0x4E16A4AA):                  4 / 4 bytes
+CRC (0x66EC0CD2):                  4 / 4 bytes
 
-Total size:                   286692 / 912065 bytes (31.4%)
-[SUCCESS] Build completed at Mon 08/04/2025 12:48:47.83 
+Total size:                   287307 / 913601 bytes (31.4%)
+[SUCCESS] Build completed at Mon 08/04/2025 13:33:44.52 
