@@ -1,0 +1,5 @@
+The following files will be updated during the publishing new version:
+
+app.manifest
+.github\version.ini
+Installer\Installer.nsi

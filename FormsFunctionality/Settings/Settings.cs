@@ -252,9 +252,6 @@ namespace simple_picker
             
             // Reset startup setting to false (disable startup)
             RunAtStartup = false;
-            
-            // Reset registry version to default
-            SetVersionInRegistry("1.0");
         }
     }
 }

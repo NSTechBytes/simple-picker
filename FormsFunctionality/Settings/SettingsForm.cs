@@ -155,8 +155,7 @@ namespace simple_picker
             
             DialogResult result = MessageBox.Show(
                 $"Are you sure you want to reset all settings to their default values?\n\n" +
-                $"This will also reset the version in the registry to 1.0 (current: {currentVersion}) " +
-                $"and disable startup functionality.",
+                $"This will also disable startup functionality.",
                 "Reset Settings Confirmation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);

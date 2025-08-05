@@ -5,7 +5,7 @@
 !define COMPANYNAME "nstechbytes"
 !define DESCRIPTION "SimplePicker Application"
 !define VERSIONMAJOR 1
-!define VERSIONMINOR 0
+!define VERSIONMINOR 1
 !define HELPURL "https://github.com/NSTechBytes/simple-picker"
 !define UPDATEURL "https://github.com/NSTechBytes/simple-picker"
 !define ABOUTURL "https://simple-picker.pages.dev/about"
