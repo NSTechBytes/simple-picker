@@ -21,6 +21,24 @@ namespace simple_picker
         [DllImport("gdi32.dll")]
         private static extern bool BitBlt(IntPtr hdc, int nXDest, int nYDest, int nWidth, int nHeight, IntPtr hdcSrc, int nXSrc, int nYSrc, int dwRop);
 
+        // Import SetWindowPos API for proper topmost behavior
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool SetWindowPos(
+            IntPtr hWnd,
+            IntPtr hWndInsertAfter,
+            int X,
+            int Y,
+            int cx,
+            int cy,
+            uint uFlags);
+
+        // Constants for SetWindowPos
+        private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        private const uint SWP_NOMOVE = 0x0002;
+        private const uint SWP_NOSIZE = 0x0001;
+        private const uint SWP_NOACTIVATE = 0x0010;
+        private const uint SWP_SHOWWINDOW = 0x0040;
+
         // Constants for magnifier appearance and behavior
         private const int SRCCOPY = 0x00CC0020;
         private const int MAGNIFIER_SIZE = 150;
@@ -71,22 +89,84 @@ namespace simple_picker
             lastCursorPos = cursorPosition;
 
             // Position the magnifier window with an offset from the cursor.
-            int offsetX = 30;
-            int offsetY = 30;
+            int offsetX = 20;
+            int offsetY = 20;
 
+            // Get the screen that contains the cursor position
+            Screen currentScreen = Screen.FromPoint(cursorPosition);
+            Rectangle screenBounds = currentScreen.Bounds;
+
+            // Start with default position (bottom-right of cursor)
             int magnifierX = cursorPosition.X + offsetX;
             int magnifierY = cursorPosition.Y + offsetY;
 
-            // Adjust the window position to ensure it stays within the screen bounds.
-            if (Screen.PrimaryScreen != null)
+            // Check if magnifier fits in the bottom-right position
+            bool fitsRight = (magnifierX + this.Width) <= screenBounds.Right;
+            bool fitsBottom = (magnifierY + this.Height) <= screenBounds.Bottom;
+
+            if (!fitsRight || !fitsBottom)
             {
-                if (magnifierX + this.Width > Screen.PrimaryScreen.Bounds.Width)
-                    magnifierX = cursorPosition.X - this.Width - offsetX;
-                if (magnifierY + this.Height > Screen.PrimaryScreen.Bounds.Height)
-                    magnifierY = cursorPosition.Y - this.Height - offsetY;
+                // Try different positions in order of preference
+
+                // Try bottom-left
+                if (!fitsRight && fitsBottom)
+                {
+                    int leftX = cursorPosition.X - this.Width - offsetX;
+                    if (leftX >= screenBounds.Left)
+                    {
+                        magnifierX = leftX;
+                    }
+                }
+
+                // Try top-right  
+                if (fitsRight && !fitsBottom)
+                {
+                    int topY = cursorPosition.Y - this.Height - offsetY;
+                    if (topY >= screenBounds.Top)
+                    {
+                        magnifierY = topY;
+                    }
+                }
+
+                // Try top-left
+                if (!fitsRight && !fitsBottom)
+                {
+                    int leftX = cursorPosition.X - this.Width - offsetX;
+                    int topY = cursorPosition.Y - this.Height - offsetY;
+
+                    if (leftX >= screenBounds.Left && topY >= screenBounds.Top)
+                    {
+                        magnifierX = leftX;
+                        magnifierY = topY;
+                    }
+                    else if (leftX >= screenBounds.Left)
+                    {
+                        magnifierX = leftX;
+                        // Keep original Y or clamp to screen
+                        magnifierY = Math.Max(screenBounds.Top,
+                            Math.Min(magnifierY, screenBounds.Bottom - this.Height));
+                    }
+                    else if (topY >= screenBounds.Top)
+                    {
+                        magnifierY = topY;
+                        // Keep original X or clamp to screen
+                        magnifierX = Math.Max(screenBounds.Left,
+                            Math.Min(magnifierX, screenBounds.Right - this.Width));
+                    }
+                }
+
+                // Final boundary clamping to ensure magnifier stays on current screen
+                magnifierX = Math.Max(screenBounds.Left,
+                    Math.Min(magnifierX, screenBounds.Right - this.Width));
+                magnifierY = Math.Max(screenBounds.Top,
+                    Math.Min(magnifierY, screenBounds.Bottom - this.Height));
             }
 
             this.Location = new Point(magnifierX, magnifierY);
+
+            // Force this window to stay topmost
+            SetWindowPos(this.Handle, HWND_TOPMOST, 0, 0, 0, 0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW);
 
             // Capture the screen area around the cursor and draw the magnified view.
             CaptureAndMagnify(cursorPosition);
@@ -110,18 +190,13 @@ namespace simple_picker
                 int captureX = cursorPosition.X - CAPTURE_SIZE / 2;
                 int captureY = cursorPosition.Y - CAPTURE_SIZE / 2;
 
-                // Get the device context for the entire screen.
-                IntPtr screenDC = GetDC(IntPtr.Zero);
-
-                // Use a temporary bitmap to hold the captured screen portion.
+                // Use Graphics.CopyFromScreen for better multi-monitor support
                 using (Bitmap captureBitmap = new Bitmap(CAPTURE_SIZE, CAPTURE_SIZE))
                 {
                     using (Graphics captureGraphics = Graphics.FromImage(captureBitmap))
                     {
-                        IntPtr captureDC = captureGraphics.GetHdc();
-                        // Copy the screen pixels into our temporary bitmap.
-                        BitBlt(captureDC, 0, 0, CAPTURE_SIZE, CAPTURE_SIZE, screenDC, captureX, captureY, SRCCOPY);
-                        captureGraphics.ReleaseHdc(captureDC);
+                        // CopyFromScreen handles multi-monitor coordinates automatically
+                        captureGraphics.CopyFromScreen(captureX, captureY, 0, 0, new Size(CAPTURE_SIZE, CAPTURE_SIZE));
                     }
 
                     // Draw the captured image onto our main magnifier bitmap, scaling it up.
@@ -133,8 +208,6 @@ namespace simple_picker
                     // Draw the crosshair in the center.
                     DrawCrosshair();
                 }
-
-                ReleaseDC(IntPtr.Zero, screenDC);
             }
             catch
             {
@@ -193,9 +266,7 @@ namespace simple_picker
                 int availableWidth = borderWidth - (BORDER_WIDTH * 2);
                 int availableHeight = borderHeight - (BORDER_WIDTH * 2);
 
-                // **MODIFIED**
-                // Stretch the magnifier bitmap to fill the entire available content area.
-                // This will make the content appear "wide" as requested.
+                // Draw the magnifier bitmap in the content area
                 e.Graphics.DrawImage(magnifierBitmap,
                     new Rectangle(contentX, contentY, availableWidth, availableHeight),
                     new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),

@@ -16,6 +16,11 @@ namespace simple_picker
         [DllImport("gdi32.dll")]
         private static extern uint GetPixel(IntPtr hdc, int nXPos, int nYPos);
 
+        // Add DPI awareness for better multi-monitor support
+        [DllImport("user32.dll")]
+        private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr dpiContext);
+        private static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
+
         private Settings settings;
         private bool isPickingColor = false;
         private Cursor? crosshairCursor; // Made nullable to fix CS8618
@@ -35,10 +40,10 @@ namespace simple_picker
         private void InitializeMagnifier()
         {
             magnifierForm = new MagnifierForm();
-            
-            // Setup timer for updating magnifier
+
+            // Setup timer for updating magnifier (like YourPicker)
             updateTimer = new System.Windows.Forms.Timer();
-            updateTimer.Interval = 16; // ~60 FPS
+            updateTimer.Interval = 100; // Update every 100ms (like YourPicker)
             updateTimer.Tick += UpdateMagnifier;
         }
 
@@ -58,12 +63,25 @@ namespace simple_picker
 
         public void StartColorPicking()
         {
-            this.WindowState = FormWindowState.Maximized;
+            // Set thread DPI awareness for better multi-monitor support
+            SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
+            // Cover all monitors using virtual screen bounds
+            Rectangle virtualScreen = SystemInformation.VirtualScreen;
+
             this.FormBorderStyle = FormBorderStyle.None;
             this.BackColor = Color.Black;
             this.Opacity = 0.01; // Nearly transparent
             this.TopMost = true;
-            this.Cursor = crosshairCursor ?? Cursors.Cross; // Fallback to default cross cursor
+            this.Cursor = crosshairCursor ?? Cursors.Cross;
+            this.ShowInTaskbar = false;
+
+            // Position and size the form to cover all monitors
+            this.StartPosition = FormStartPosition.Manual;
+            this.Location = new Point(virtualScreen.X, virtualScreen.Y);
+            this.Size = new Size(virtualScreen.Width, virtualScreen.Height);
+            this.WindowState = FormWindowState.Normal; // Don't use Maximized for multi-monitor
+
             this.Show();
             this.BringToFront();
             isPickingColor = true;
@@ -77,7 +95,9 @@ namespace simple_picker
         {
             if (isPickingColor && e.Button == MouseButtons.Left)
             {
-                Color color = GetPixelColor(Cursor.Position.X, Cursor.Position.Y);
+                // Convert form coordinates to screen coordinates for multi-monitor support
+                Point screenPoint = this.PointToScreen(e.Location);
+                Color color = GetPixelColor(screenPoint.X, screenPoint.Y);
                 ColorSelected?.Invoke(color);
                 StopColorPicking();
             }
@@ -116,6 +136,11 @@ namespace simple_picker
 
         private Color GetPixelColor(int x, int y)
         {
+            // Ensure coordinates are within virtual screen bounds for multi-monitor safety
+            Rectangle virtualScreen = SystemInformation.VirtualScreen;
+            x = Math.Max(virtualScreen.Left, Math.Min(x, virtualScreen.Right - 1));
+            y = Math.Max(virtualScreen.Top, Math.Min(y, virtualScreen.Bottom - 1));
+
             IntPtr hdc = GetDC(IntPtr.Zero);
             uint pixel = GetPixel(hdc, x, y);
             ReleaseDC(IntPtr.Zero, hdc);
