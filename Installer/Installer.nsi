@@ -63,14 +63,14 @@ Section "Core Application" SecCore
     SetOutPath $INSTDIR
     
     ; Install application files
-    File "..\bin\x86\Release\net8.0-windows\simple-picker.exe"
-    File "..\bin\x86\Release\net8.0-windows\simple-picker.dll"
-    File "..\bin\x86\Release\net8.0-windows\simple-picker.deps.json"
-    File "..\bin\x86\Release\net8.0-windows\simple-picker.runtimeconfig.json"
+    File "..\src\bin\x86\Release\net8.0-windows\simple-picker.exe"
+    File "..\src\bin\x86\Release\net8.0-windows\simple-picker.dll"
+    File "..\src\bin\x86\Release\net8.0-windows\simple-picker.deps.json"
+    File "..\src\bin\x86\Release\net8.0-windows\simple-picker.runtimeconfig.json"
     
     ; Install resources directory
     SetOutPath "$INSTDIR\resources"
-    File /r "..\bin\x86\Release\net8.0-windows\resources\*.*"
+    File /r "..\src\bin\x86\Release\net8.0-windows\resources\*.*"
     
     ; Reset output path to main directory
     SetOutPath $INSTDIR
