@@ -61,13 +61,14 @@ foreach ($file in $filesToCopy) {
     }
 }
 
-# Copy resources folder
-$srcResources = Join-Path $outDir "resources"
+# Copy resources folder from project root (source of truth)
+$srcResources = Join-Path $PSScriptRoot "resources"
+$dstResources = Join-Path $distDir "resources"
+
 if (Test-Path $srcResources) {
-    $dstResources = Join-Path $distDir "resources"
     New-Item -ItemType Directory -Path $dstResources -Force | Out-Null
     Copy-Item -Path "$srcResources\*" -Destination $dstResources -Recurse -Force
-    Write-Host "[dist] Copied resources folder" -ForegroundColor Green
+    Write-Host "[dist] Copied resources folder from $srcResources" -ForegroundColor Green
 } else {
     Write-Warning "[dist] resources folder not found at: $srcResources"
 }
