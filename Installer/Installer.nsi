@@ -17,7 +17,7 @@
 
 ; General settings
 Name "${APPNAME}"
-OutFile "Setup\SimplePicker_v${VersionMajor}.${VersionMinor}.exe"
+OutFile "dist_output\SimplePicker_v${VersionMajor}.${VersionMinor}.exe"
 InstallDir "$PROGRAMFILES\${APPNAME}"
 InstallDirRegKey HKCU "Software\${APPNAME}" ""
 RequestExecutionLevel admin
@@ -70,7 +70,7 @@ Section "Core Application" SecCore
     
     ; Install resources directory
     SetOutPath "$INSTDIR\resources"
-    File /r "..\src\bin\x86\Release\net8.0-windows\resources\*.*"
+    File /r "..\resources\*.*"
     
     ; Reset output path to main directory
     SetOutPath $INSTDIR
