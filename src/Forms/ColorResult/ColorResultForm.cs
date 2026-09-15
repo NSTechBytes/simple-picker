@@ -34,9 +34,10 @@ namespace simple_picker
             else
             {
                 // Center on screen
+                var screen = Screen.PrimaryScreen ?? Screen.AllScreens[0];
                 this.Location = new Point(
-                    (Screen.PrimaryScreen.WorkingArea.Width - this.Width) / 2,
-                    (Screen.PrimaryScreen.WorkingArea.Height - this.Height) / 2
+                    (screen.WorkingArea.Width - this.Width) / 2,
+                    (screen.WorkingArea.Height - this.Height) / 2
                 );
             }
 
@@ -74,7 +75,7 @@ namespace simple_picker
             base.OnFormClosing(e);
         }
 
-        private void copyButton_Click(object sender, EventArgs e)
+        private void copyButton_Click(object? sender, EventArgs e)
         {
             // Stop auto-close timer when user interacts with the form
             autoCloseTimer?.Stop();
@@ -106,7 +107,7 @@ namespace simple_picker
             }
         }
 
-        private void copyHexButton_Click(object sender, EventArgs e)
+        private void copyHexButton_Click(object? sender, EventArgs e)
         {
             // Stop auto-close timer when user interacts with the form
             autoCloseTimer?.Stop();

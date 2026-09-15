@@ -6,8 +6,6 @@ namespace simple_picker
 {
     partial class ColorPickerForm
     {
-        private System.ComponentModel.IContainer? components = null;
-
         // FIX: Removed duplicate Dispose method - only keep the one in ColorPickerForm.cs
 
         private void InitializeComponent()

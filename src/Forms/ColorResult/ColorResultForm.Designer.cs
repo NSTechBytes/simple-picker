@@ -7,7 +7,6 @@ namespace simple_picker
 {
     partial class ColorResultForm
     {
-        private System.ComponentModel.IContainer? components = null;
         private Panel colorPanel = null!;
         private Label rgbLabel = null!;
         private Label hexLabel = null!;
@@ -58,7 +57,7 @@ namespace simple_picker
             this.copyButton.TabIndex = 3;
             this.copyButton.Text = "Copy RGB";
             this.copyButton.UseVisualStyleBackColor = true;
-            this.copyButton.Click += new EventHandler(this.copyButton_Click);
+            this.copyButton.Click += this.copyButton_Click;
 
             // copyHexButton
             this.copyHexButton.Location = new Point(190, 70);
@@ -67,7 +66,7 @@ namespace simple_picker
             this.copyHexButton.TabIndex = 4;
             this.copyHexButton.Text = "Copy HEX";
             this.copyHexButton.UseVisualStyleBackColor = true;
-            this.copyHexButton.Click += new EventHandler(this.copyHexButton_Click);
+            this.copyHexButton.Click += this.copyHexButton_Click;
 
             // closeButton
             this.closeButton.Location = new Point(275, 70);

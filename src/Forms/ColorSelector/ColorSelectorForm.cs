@@ -27,8 +27,6 @@ namespace simple_picker
         private bool needsColorWheelRedraw = true;
         private bool needsBrightnessBarRedraw = true;
 
-        public event Action<Color>? ColorSelected;
-
         public ColorSelectorForm()
         {
             InitializeComponent();
@@ -300,7 +298,7 @@ namespace simple_picker
                 brightnessBarPanel.Invalidate();
         }
 
-        private void OnRGBValueChanged(object sender, EventArgs e)
+        private void OnRGBValueChanged(object? sender, EventArgs e)
         {
             if (updatingFromCode) return;
 
@@ -318,7 +316,7 @@ namespace simple_picker
             UpdateUI();
         }
 
-        private void OnHexTextChanged(object sender, EventArgs e)
+        private void OnHexTextChanged(object? sender, EventArgs e)
         {
             if (updatingFromCode) return;
 
@@ -346,17 +344,17 @@ namespace simple_picker
             }
         }
 
-        private void OnColorWheelMouseDown(object sender, MouseEventArgs e)
+        private void OnColorWheelMouseDown(object? sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
                 HandleColorWheelClick(e.Location);
                 isDraggingWheel = true;
-                ((Control)sender).Capture = true;
+                if (sender is Control ctrl) ctrl.Capture = true;
             }
         }
 
-        private void OnColorWheelMouseMove(object sender, MouseEventArgs e)
+        private void OnColorWheelMouseMove(object? sender, MouseEventArgs e)
         {
             if (isDraggingWheel)
             {
@@ -364,12 +362,12 @@ namespace simple_picker
             }
         }
 
-        private void OnColorWheelMouseUp(object sender, MouseEventArgs e)
+        private void OnColorWheelMouseUp(object? sender, MouseEventArgs e)
         {
             if (isDraggingWheel)
             {
                 isDraggingWheel = false;
-                ((Control)sender).Capture = false;
+                if (sender is Control ctrl) ctrl.Capture = false;
             }
         }
 
@@ -392,17 +390,17 @@ namespace simple_picker
             }
         }
 
-        private void OnBrightnessBarMouseDown(object sender, MouseEventArgs e)
+        private void OnBrightnessBarMouseDown(object? sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
             {
                 HandleBrightnessBarClick(e.Y);
                 isDraggingBrightness = true;
-                ((Control)sender).Capture = true;
+                if (sender is Control ctrl) ctrl.Capture = true;
             }
         }
 
-        private void OnBrightnessBarMouseMove(object sender, MouseEventArgs e)
+        private void OnBrightnessBarMouseMove(object? sender, MouseEventArgs e)
         {
             if (isDraggingBrightness)
             {
@@ -410,24 +408,26 @@ namespace simple_picker
             }
         }
 
-        private void OnBrightnessBarMouseUp(object sender, MouseEventArgs e)
+        private void OnBrightnessBarMouseUp(object? sender, MouseEventArgs e)
         {
             if (isDraggingBrightness)
             {
                 isDraggingBrightness = false;
-                ((Control)sender).Capture = false;
+                if (sender is Control ctrl) ctrl.Capture = false;
             }
         }
 
         private void HandleBrightnessBarClick(int y)
         {
+            if (brightnessBarBitmap == null) return;
+
             // Use the actual bitmap height instead of the original rect height
             float relativeY = Math.Max(0, Math.Min(1, (float)y / brightnessBarBitmap.Height));
             brightness = 1.0f - relativeY;
             UpdateSelectedColor();
         }
 
-        private void OnColorWheelPaint(object sender, PaintEventArgs e)
+        private void OnColorWheelPaint(object? sender, PaintEventArgs e)
         {
             if (needsColorWheelRedraw)
             {
@@ -441,7 +441,7 @@ namespace simple_picker
             }
         }
 
-        private void OnBrightnessBarPaint(object sender, PaintEventArgs e)
+        private void OnBrightnessBarPaint(object? sender, PaintEventArgs e)
         {
             if (needsBrightnessBarRedraw)
             {
@@ -455,7 +455,7 @@ namespace simple_picker
             }
         }
 
-        private void OnCopyRGBButtonClick(object sender, EventArgs e)
+        private void OnCopyRGBButtonClick(object? sender, EventArgs e)
         {
             string rgbText = ColorUtilities.ColorToString(selectedColor, ColorFormat.RGB);
             if (ColorUtilities.CopyToClipboard(rgbText))
@@ -464,7 +464,7 @@ namespace simple_picker
             }
         }
 
-        private void OnCopyHexButtonClick(object sender, EventArgs e)
+        private void OnCopyHexButtonClick(object? sender, EventArgs e)
         {
             string hexText = ColorUtilities.ColorToString(selectedColor, ColorFormat.Hex);
             if (ColorUtilities.CopyToClipboard(hexText))

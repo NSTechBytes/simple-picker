@@ -294,7 +294,7 @@ namespace simple_picker
             previewGroupBox.ResumeLayout(false);
             ResumeLayout(false);
         }
-        private DoubleBufferedPanel colorWheelPanel;
-        private DoubleBufferedPanel brightnessBarPanel;
+        private DoubleBufferedPanel colorWheelPanel = null!;
+        private DoubleBufferedPanel brightnessBarPanel = null!;
     }
 }

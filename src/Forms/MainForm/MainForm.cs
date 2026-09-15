@@ -58,10 +58,8 @@ namespace simple_picker
                 // Reset session flag when loading settings (new program session)
                 settings.UpdateDialogShownThisSession = false;
             }
-            catch (Exception ex) // Catch specific exceptions for better debugging
+            catch
             {
-                // Optionally log the exception
-                // Console.WriteLine($"Error loading settings: {ex.Message}");
                 settings = new Settings();
                 settings.UpdateDialogShownThisSession = false;
             }
@@ -78,10 +76,9 @@ namespace simple_picker
                 string json = JsonSerializer.Serialize(settings, options);
                 File.WriteAllText(settingsPath, json);
             }
-            catch (Exception ex) // Catch specific exceptions for better debugging
+            catch
             {
-                // Optionally log the exception
-                // Console.WriteLine($"Error saving settings: {ex.Message}");
+                // Silently ignore save errors
             }
         }
 
@@ -238,7 +235,6 @@ namespace simple_picker
         {
             using (ColorSelectorForm colorSelectorForm = new ColorSelectorForm())
             {
-                colorSelectorForm.ColorSelected += OnColorSelected;
                 colorSelectorForm.ShowDialog();
             }
         }
