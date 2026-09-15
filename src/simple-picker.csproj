@@ -7,12 +7,14 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>resources\icon.ico</ApplicationIcon>
+    <ApplicationIcon>..\resources\icon.ico</ApplicationIcon>
     <Platforms>AnyCPU;x86</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="resources\icon.ico" />
+    <Content Include="..\resources\icon.ico">
+      <Link>resources\icon.ico</Link>
+    </Content>
   </ItemGroup>
 
 </Project>

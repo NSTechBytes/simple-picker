@@ -106,7 +106,7 @@ namespace simple_picker
                             float hueValue = (float)(angle * 180 / Math.PI);
                             float satValue = (float)(distance / colorWheelRadius);
 
-                            Color pixelColor = ColorUtilities.HSBToColor(hueValue, satValue, 1.0f);
+                            Color pixelColor = ColorConversions.HSBToColor(hueValue, satValue, 1.0f);
                             colorWheelBitmap.SetPixel(x, y, pixelColor);
                         }
                     }
@@ -147,8 +147,8 @@ namespace simple_picker
                 // Create gradient brush for smoother appearance - fill entire bitmap
                 using (LinearGradientBrush brush = new LinearGradientBrush(
                     new Rectangle(0, 0, brightnessBarBitmap.Width, brightnessBarBitmap.Height),
-                    ColorUtilities.HSBToColor(hue, saturation, 1.0f), // Bright at top
-                    ColorUtilities.HSBToColor(hue, saturation, 0.0f), // Dark at bottom
+                    ColorConversions.HSBToColor(hue, saturation, 1.0f), // Bright at top
+                    ColorConversions.HSBToColor(hue, saturation, 0.0f), // Dark at bottom
                     LinearGradientMode.Vertical))
                 {
                     // Fill the entire bitmap area
@@ -263,7 +263,7 @@ namespace simple_picker
 
         private void UpdateSelectedColor()
         {
-            selectedColor = ColorUtilities.HSBToColor(hue, saturation, brightness);
+            selectedColor = ColorConversions.HSBToColor(hue, saturation, brightness);
             UpdateBrightnessBar();
             needsColorWheelRedraw = true;
             needsBrightnessBarRedraw = true;
@@ -310,7 +310,7 @@ namespace simple_picker
                 (int)blueNumericUpDown.Value
             );
 
-            ColorUtilities.ColorToHSB(newColor, out hue, out saturation, out brightness);
+            ColorConversions.ColorToHSB(newColor, out hue, out saturation, out brightness);
             selectedColor = newColor;
             UpdateBrightnessBar();
             needsColorWheelRedraw = true;
@@ -332,7 +332,7 @@ namespace simple_picker
                     int b = int.Parse(hexText.Substring(4, 2), NumberStyles.HexNumber);
 
                     Color newColor = Color.FromArgb(r, g, b);
-                    ColorUtilities.ColorToHSB(newColor, out hue, out saturation, out brightness);
+                    ColorConversions.ColorToHSB(newColor, out hue, out saturation, out brightness);
                     selectedColor = newColor;
                     UpdateBrightnessBar();
                     needsColorWheelRedraw = true;

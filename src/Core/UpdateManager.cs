@@ -7,6 +7,9 @@ using System.Diagnostics;
 
 namespace simple_picker
 {
+    /// <summary>
+    /// Manages application update checking, version comparison, and update dialog display.
+    /// </summary>
     public class UpdateManager
     {
         private readonly Settings settings;
@@ -328,15 +331,5 @@ namespace simple_picker
             var (appName, version, publisher) = settings.GetAppInfoFromRegistry();
             return $"App: {appName}\nVersion: {version}\nPublisher: {publisher}\nSource: Registry (HKEY_CURRENT_USER\\Software\\SimplePicker)\n\nUpdate Settings:\nAuto-check: {settings.AutoCheckForUpdates}\nInterval: {settings.UpdateCheckIntervalSeconds}s\nLast check: {settings.LastUpdateCheck}\nDialog shown this session: {settings.UpdateDialogShownThisSession}";
         }
-    }
-
-    public class UpdateResult
-    {
-        public bool Success { get; set; }
-        public bool UpdateAvailable { get; set; }
-        public string CurrentVersion { get; set; } = string.Empty;
-        public string LatestVersion { get; set; } = string.Empty;
-        public string ErrorMessage { get; set; } = string.Empty;
-        public bool ShowNoUpdateMessage { get; set; } = false;
     }
 }
