@@ -35,7 +35,6 @@ function Increment-Version {
         "patch" { if ($Parts.Count -gt 2) { $Parts[2]++ } else { $Parts += 1 } }
         default { throw "Unsupported bump level: $Level" }
     }
-    # Ensure we have at least 2 parts
     while ($Parts.Count -lt 2) { $Parts += 0 }
     return $Parts
 }
@@ -79,7 +78,6 @@ $manifest   = Join-Path $repoRoot "app.manifest"
 
 # ---------------------------------------------------------------------------
 # Read current version from .github\version.ini
-# (format: version = 1.1)
 # ---------------------------------------------------------------------------
 if (-not (Test-Path -LiteralPath $versionIni)) {
     throw "Could not locate .github\version.ini at: $versionIni"
@@ -103,7 +101,7 @@ if ([string]::IsNullOrWhiteSpace($targetVersion)) {
     $targetVersion = Join-Version $nextParts
 }
 
-[void](Parse-Version $targetVersion)   # validate format
+[void](Parse-Version $targetVersion)
 
 $v        = $targetVersion -split '\.'
 $verMajor = $v[0]
@@ -124,7 +122,6 @@ Write-Host ""
 
 # ---------------------------------------------------------------------------
 # 1. .github\version.ini
-#    - version = x.x
 # ---------------------------------------------------------------------------
 Update-FileContent -Path $versionIni -Transform {
     param($text)
@@ -137,8 +134,6 @@ Update-FileContent -Path $versionIni -Transform {
 
 # ---------------------------------------------------------------------------
 # 2. Installer\Installer.nsi
-#    - !define VERSIONMAJOR x
-#    - !define VERSIONMINOR x
 # ---------------------------------------------------------------------------
 if (Test-Path -LiteralPath $nsiFile) {
     Update-FileContent -Path $nsiFile -Transform {
@@ -148,24 +143,21 @@ if (Test-Path -LiteralPath $nsiFile) {
         return $text
     }
 } else {
-    Write-Warning "Installer.nsi not found at: $nsiFile — skipping NSIS version update."
+    Write-Warning "Installer.nsi not found at: $nsiFile - skipping NSIS version update."
 }
 
 # ---------------------------------------------------------------------------
-# 3. app.manifest
-#    - assemblyIdentity version="x.x.x.0"
+# 3. app.manifest - assemblyIdentity version="x.x.x.0"
 # ---------------------------------------------------------------------------
 if (Test-Path -LiteralPath $manifest) {
     Update-FileContent -Path $manifest -Transform {
         param($text)
-        [regex]::Replace(
-            $text,
-            '(?m)(<assemblyIdentity\s+version=")\d+\.\d+\.\d+\.\d+(")',
-            ('${1}' + $verFull + '${2}')
-        )
+        $pattern = '(?m)(<assemblyIdentity\s+version=\x22)\d+\.\d+\.\d+\.\d+(\x22)'
+        $replacement = '${1}' + $verFull + '${2}'
+        [regex]::Replace($text, $pattern, $replacement)
     }
 } else {
-    Write-Warning "app.manifest not found at: $manifest — skipping manifest version update."
+    Write-Warning "app.manifest not found at: $manifest - skipping manifest version update."
 }
 
 # ---------------------------------------------------------------------------
