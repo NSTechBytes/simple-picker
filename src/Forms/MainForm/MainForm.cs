@@ -126,6 +126,8 @@ namespace simple_picker
         private ContextMenuStrip CreateContextMenu()
         {
             ContextMenuStrip menu = new ContextMenuStrip();
+            menu.ShowCheckMargin = false;
+            menu.ShowImageMargin = false;
 
             ToolStripMenuItem pickColor = new ToolStripMenuItem("Pick Color from Screen");
             pickColor.Click += (s, e) => TriggerColorPicker();
