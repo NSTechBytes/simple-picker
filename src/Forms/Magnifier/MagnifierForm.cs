@@ -51,6 +51,21 @@ namespace simple_picker
         private Bitmap? magnifierBitmap;
         private Graphics? magnifierGraphics;
 
+        // Keep magnifier from taking focus so Escape/clicks stay on ColorPickerForm
+        protected override bool ShowWithoutActivation => true;
+
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                const int WS_EX_NOACTIVATE = 0x08000000;
+                const int WS_EX_TOOLWINDOW = 0x00000080;
+                CreateParams cp = base.CreateParams;
+                cp.ExStyle |= WS_EX_NOACTIVATE | WS_EX_TOOLWINDOW;
+                return cp;
+            }
+        }
+
         public MagnifierForm()
         {
             InitializeComponent();

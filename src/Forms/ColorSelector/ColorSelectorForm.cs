@@ -44,6 +44,7 @@ namespace simple_picker
             this.MinimizeBox = false;
             this.StartPosition = FormStartPosition.CenterParent;
             this.Size = new Size(750, 550);
+            this.KeyPreview = true;
 
             // Method 2: Load icon from file path
             try
@@ -489,6 +490,16 @@ namespace simple_picker
                 feedbackTimer.Dispose();
             };
             feedbackTimer.Start();
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+            {
+                this.DialogResult = DialogResult.Cancel;
+                this.Close();
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void Dispose(bool disposing)

@@ -25,6 +25,7 @@ namespace simple_picker
             this.TopMost = settings.TopMost;
             this.FormBorderStyle = FormBorderStyle.FixedToolWindow;
             this.StartPosition = FormStartPosition.Manual;
+            this.KeyPreview = true;
 
             // Position the form
             if (settings.PopupX >= 0 && settings.PopupY >= 0)
@@ -66,6 +67,17 @@ namespace simple_picker
                 autoCloseTimer?.Stop();
                 this.Close();
             }
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+            {
+                isClosing = true;
+                autoCloseTimer?.Stop();
+                this.Close();
+            }
+            base.OnKeyDown(e);
         }
 
         protected override void OnFormClosing(FormClosingEventArgs e)

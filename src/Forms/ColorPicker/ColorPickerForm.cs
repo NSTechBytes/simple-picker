@@ -84,10 +84,18 @@ namespace simple_picker
 
             this.Show();
             this.BringToFront();
+            this.Focus();
             isPickingColor = true;
 
-            // Show magnifier and start updating
-            magnifierForm?.Show();
+            // Recreate magnifier if it was disposed, then show and start updating
+            if (magnifierForm == null || magnifierForm.IsDisposed)
+            {
+                magnifierForm = new MagnifierForm();
+            }
+            magnifierForm.Show();
+            // Keep keyboard focus on the picker so Escape cancels picking and closes the magnifier
+            this.Activate();
+            this.Focus();
             updateTimer?.Start();
         }
 
@@ -109,21 +117,38 @@ namespace simple_picker
             base.OnMouseClick(e);
         }
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (isPickingColor && keyData == Keys.Escape)
+            {
+                StopColorPicking();
+                return true;
+            }
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Escape)
             {
                 StopColorPicking();
+                e.Handled = true;
+                e.SuppressKeyPress = true;
             }
             base.OnKeyDown(e);
         }
 
         private void StopColorPicking()
         {
-            this.Hide();
             isPickingColor = false;
             updateTimer?.Stop();
-            magnifierForm?.Hide();
+            if (magnifierForm != null)
+            {
+                magnifierForm.Hide();
+                magnifierForm.Dispose();
+                magnifierForm = null;
+            }
+            this.Hide();
         }
 
         private void UpdateMagnifier(object? sender, EventArgs e)
@@ -159,7 +184,10 @@ namespace simple_picker
             {
                 updateTimer?.Stop();
                 updateTimer?.Dispose();
-                magnifierForm?.Dispose();
+                if (magnifierForm != null && !magnifierForm.IsDisposed)
+                {
+                    magnifierForm.Dispose();
+                }
             }
             base.Dispose(disposing);
         }

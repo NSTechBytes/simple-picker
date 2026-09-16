@@ -189,6 +189,16 @@ namespace simple_picker
             this.Close();
         }
 
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Escape)
+            {
+                this.DialogResult = DialogResult.Cancel;
+                this.Close();
+            }
+            base.OnKeyDown(e);
+        }
+
         private void lastUpdateCheckLabel_Click(object sender, EventArgs e)
         {
             string versionInfo = updateManager.GetVersionInfo();
