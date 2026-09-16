@@ -46,7 +46,6 @@ namespace simple_picker
         private const int ZOOM_FACTOR = 10;
         private const int MAGNIFIER_SIZE = CAPTURE_SIZE * ZOOM_FACTOR; // 200
         private const int BORDER_WIDTH = 2;
-        private const int BORDER_PADDING = 5;
 
         private Point lastCursorPos = Point.Empty;
         private Bitmap? magnifierBitmap;
@@ -81,8 +80,8 @@ namespace simple_picker
             // Avoid DPI/font autoscaling so the square magnifier keeps a 1:1 pixel ratio.
             this.AutoScaleMode = AutoScaleMode.None;
 
-            // Exact client size: magnified image + padding + border on each side.
-            int totalSize = MAGNIFIER_SIZE + (BORDER_PADDING * 2) + (BORDER_WIDTH * 4);
+            // Exact client size: magnified image + border on each side (no outer black padding).
+            int totalSize = MAGNIFIER_SIZE + (BORDER_WIDTH * 2);
             this.ClientSize = new Size(totalSize, totalSize);
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
@@ -269,8 +268,8 @@ namespace simple_picker
                 e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
                 e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
 
-                int contentX = BORDER_PADDING + BORDER_WIDTH;
-                int contentY = BORDER_PADDING + BORDER_WIDTH;
+                int contentX = BORDER_WIDTH;
+                int contentY = BORDER_WIDTH;
 
                 // Draw at exact MAGNIFIER_SIZE — no stretch, preserves original pixel ratio.
                 e.Graphics.DrawImage(magnifierBitmap,
@@ -278,14 +277,16 @@ namespace simple_picker
                     new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
                     GraphicsUnit.Pixel);
 
-                // White border around the magnified content.
+                // White border flush with the form edge (no black outside).
                 using (Pen borderPen = new Pen(Color.White, BORDER_WIDTH))
                 {
+                    // Inset by half pen width so the stroke stays fully inside the client area.
+                    float inset = BORDER_WIDTH / 2f;
                     e.Graphics.DrawRectangle(borderPen,
-                        BORDER_PADDING,
-                        BORDER_PADDING,
-                        MAGNIFIER_SIZE + (BORDER_WIDTH * 2),
-                        MAGNIFIER_SIZE + (BORDER_WIDTH * 2));
+                        inset,
+                        inset,
+                        MAGNIFIER_SIZE + BORDER_WIDTH,
+                        MAGNIFIER_SIZE + BORDER_WIDTH);
                 }
             }
             base.OnPaint(e);
