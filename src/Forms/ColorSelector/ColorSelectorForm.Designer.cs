@@ -282,7 +282,7 @@ namespace simple_picker
             MinimizeBox = false;
             Name = "ColorSelectorForm";
             ShowIcon = false;
-            StartPosition = FormStartPosition.CenterParent;
+            StartPosition = FormStartPosition.CenterScreen;
             Text = "Color Selector";
             ((System.ComponentModel.ISupportInitialize)redNumericUpDown).EndInit();
             ((System.ComponentModel.ISupportInitialize)greenNumericUpDown).EndInit();

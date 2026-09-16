@@ -42,7 +42,7 @@ namespace simple_picker
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.StartPosition = FormStartPosition.CenterParent;
+            this.StartPosition = FormStartPosition.CenterScreen;
             this.Size = new Size(750, 550);
             this.KeyPreview = true;
 
