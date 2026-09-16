@@ -29,13 +29,6 @@ A lightweight Windows Forms application for picking colors from your screen, wit
 - Use the global hotkey (configurable in settings) to activate the picker.
 - Select a color and copy its value to the clipboard.
 
-## Project Structure
-
-- `FormsFunctionality/` — Core forms and utilities (ColorPicker, Magnifier, Settings, etc.)
-- `Installer/` — NSIS installer scripts and resources.
-- `resources/` — Application icons and images.
-- `Program.cs` — Application entry point.
-
 ## Building
 
 1. Clone the repository:
