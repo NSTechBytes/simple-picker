@@ -40,10 +40,11 @@ namespace simple_picker
         private const uint SWP_SHOWWINDOW = 0x0040;
 
         // Constants for magnifier appearance and behavior
+        // MAGNIFIER_SIZE must be CAPTURE_SIZE * ZOOM_FACTOR so each pixel scales evenly (original ratio).
         private const int SRCCOPY = 0x00CC0020;
-        private const int MAGNIFIER_SIZE = 150;
         private const int CAPTURE_SIZE = 20;
         private const int ZOOM_FACTOR = 10;
+        private const int MAGNIFIER_SIZE = CAPTURE_SIZE * ZOOM_FACTOR; // 200
         private const int BORDER_WIDTH = 2;
         private const int BORDER_PADDING = 5;
 
@@ -77,9 +78,12 @@ namespace simple_picker
         /// </summary>
         private void SetupMagnifier()
         {
-            // Calculate the total size of the form needed to accommodate the magnifier and its borders.
+            // Avoid DPI/font autoscaling so the square magnifier keeps a 1:1 pixel ratio.
+            this.AutoScaleMode = AutoScaleMode.None;
+
+            // Exact client size: magnified image + padding + border on each side.
             int totalSize = MAGNIFIER_SIZE + (BORDER_PADDING * 2) + (BORDER_WIDTH * 4);
-            this.Size = new Size(totalSize, totalSize);
+            this.ClientSize = new Size(totalSize, totalSize);
             this.FormBorderStyle = FormBorderStyle.None;
             this.TopMost = true;
             this.ShowInTaskbar = false;
@@ -262,30 +266,27 @@ namespace simple_picker
             if (magnifierBitmap != null)
             {
                 e.Graphics.Clear(Color.Black);
+                e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
 
-                // Define the outer border rectangle.
-                int borderX = BORDER_PADDING;
-                int borderY = BORDER_PADDING;
-                int borderWidth = this.ClientSize.Width - (BORDER_PADDING * 2);
-                int borderHeight = this.ClientSize.Height - (BORDER_PADDING * 2);
-
-                // Draw the white border.
-                using (Pen borderPen = new Pen(Color.White, BORDER_WIDTH))
-                {
-                    e.Graphics.DrawRectangle(borderPen, borderX, borderY, borderWidth, borderHeight);
-                }
-
-                // Define the content area inside the border.
                 int contentX = BORDER_PADDING + BORDER_WIDTH;
                 int contentY = BORDER_PADDING + BORDER_WIDTH;
-                int availableWidth = borderWidth - (BORDER_WIDTH * 2);
-                int availableHeight = borderHeight - (BORDER_WIDTH * 2);
 
-                // Draw the magnifier bitmap in the content area
+                // Draw at exact MAGNIFIER_SIZE — no stretch, preserves original pixel ratio.
                 e.Graphics.DrawImage(magnifierBitmap,
-                    new Rectangle(contentX, contentY, availableWidth, availableHeight),
+                    new Rectangle(contentX, contentY, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
                     new Rectangle(0, 0, MAGNIFIER_SIZE, MAGNIFIER_SIZE),
                     GraphicsUnit.Pixel);
+
+                // White border around the magnified content.
+                using (Pen borderPen = new Pen(Color.White, BORDER_WIDTH))
+                {
+                    e.Graphics.DrawRectangle(borderPen,
+                        BORDER_PADDING,
+                        BORDER_PADDING,
+                        MAGNIFIER_SIZE + (BORDER_WIDTH * 2),
+                        MAGNIFIER_SIZE + (BORDER_WIDTH * 2));
+                }
             }
             base.OnPaint(e);
         }
@@ -309,9 +310,7 @@ namespace simple_picker
             // 
             // MagnifierForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(200, 200);
+            this.AutoScaleMode = AutoScaleMode.None;
             this.Name = "MagnifierForm";
             this.Text = "Magnifier";
             this.ResumeLayout(false);
