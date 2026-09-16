@@ -151,8 +151,6 @@ namespace simple_picker
 
         private void resetToDefaultsButton_Click(object sender, EventArgs e)
         {
-            var (_, currentVersion, _) = settings.GetAppInfoFromRegistry();
-            
             DialogResult result = MessageBox.Show(
                 $"Are you sure you want to reset all settings to their default values?\n\n" +
                 $"This will also disable startup functionality.",

@@ -161,6 +161,22 @@ if (Test-Path -LiteralPath $manifest) {
 }
 
 # ---------------------------------------------------------------------------
+# 4. src\simple-picker.csproj - Version/AssemblyVersion/FileVersion
+# ---------------------------------------------------------------------------
+$csproj = Join-Path $repoRoot "src\simple-picker.csproj"
+if (Test-Path -LiteralPath $csproj) {
+    Update-FileContent -Path $csproj -Transform {
+        param($text)
+        $text = [regex]::Replace($text, '(?m)(<Version>)\d+\.\d+(\.\d+)?(</Version>)', ('${1}' + $targetVersion + '${3}'))
+        $text = [regex]::Replace($text, '(?m)(<AssemblyVersion>)\d+\.\d+(\.\d+)?(</AssemblyVersion>)', ('${1}' + $targetVersion + '${3}'))
+        $text = [regex]::Replace($text, '(?m)(<FileVersion>)\d+\.\d+(\.\d+)?(</FileVersion>)', ('${1}' + $targetVersion + '${3}'))
+        return $text
+    }
+} else {
+    Write-Warning "simple-picker.csproj not found at: $csproj - skipping csproj version update."
+}
+
+# ---------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------
 Write-Host ""
@@ -172,6 +188,7 @@ Write-Host "Updated files:"
 Write-Host "  - .github\version.ini"
 Write-Host "  - Installer\Installer.nsi (VERSIONMAJOR/VERSIONMINOR)"
 Write-Host "  - app.manifest (assemblyIdentity version)"
+Write-Host "  - src\simple-picker.csproj (Version/AssemblyVersion/FileVersion)"
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "  1. git add -A"

@@ -1,50 +1,45 @@
 using System.Windows.Forms;
 using Microsoft.Win32;
 using System;
+using System.Reflection;
 
 namespace simple_picker
 {
     public class Settings
     {
-        // Registry constants
-        private const string REGISTRY_KEY_PATH = @"Software\SimplePicker";
-        private const string VERSION_VALUE_NAME = "Version";
-        private const string APP_NAME_VALUE_NAME = "AppName";
-        private const string PUBLISHER_VALUE_NAME = "Publisher";
-        
-        // Startup registry constants
+        // Registry constants (startup only - version comes from assembly metadata)
         private const string STARTUP_REGISTRY_PATH = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run";
         private const string STARTUP_APP_NAME = "SimplePicker";
-        
+
         // Color Picker Hotkey - Ctrl+Shift+C
         public Keys HotkeyKey { get; set; } = Keys.C;
         public int HotkeyModifiers { get; set; } = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
-        
+
         // Color Selector Hotkey - Ctrl+Shift+S
         public Keys ColorSelectorHotkeyKey { get; set; } = Keys.S;
         public int ColorSelectorHotkeyModifiers { get; set; } = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
-        
+
         // Popup settings
         public int PopupX { get; set; } = -1; // -1 means center
         public int PopupY { get; set; } = -1; // -1 means center
         public bool TopMost { get; set; } = true;
         public int PopupDuration { get; set; } = 5000; // milliseconds
-        public bool ShowPopupOnPick { get; set; } = true; // New setting to control popup visibility
+        public bool ShowPopupOnPick { get; set; } = true;
 
         // Auto-copy settings
         public bool AutoCopyEnabled { get; set; } = true;
         public ColorFormat AutoCopyFormat { get; set; } = ColorFormat.Hex;
         public bool ShowCopyNotification { get; set; } = false;
-        
-        // Update settings - Changed from days to seconds
+
+        // Update settings
         public bool AutoCheckForUpdates { get; set; } = true;
-        public int UpdateCheckIntervalSeconds { get; set; } = 30; // Check every 30 seconds
+        public int UpdateCheckIntervalSeconds { get; set; } = 30;
         public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue;
         public string UpdateUrl { get; set; } = "https://raw.githubusercontent.com/NSTechBytes/simple-picker/refs/heads/main/.github/version.ini";
-        
+
         // Session tracking for update dialog
         public bool UpdateDialogShownThisSession { get; set; } = false;
-        
+
         // Startup settings - Property that checks registry directly
         public bool RunAtStartup
         {
@@ -52,103 +47,56 @@ namespace simple_picker
             set => SetRunAtStartupInRegistry(value);
         }
 
-        // Property to get current version from registry
+        /// <summary>
+        /// Gets the current application version from assembly metadata.
+        /// This reads the version embedded at build time via the .csproj Version property.
+        /// </summary>
         public string CurrentVersion
         {
-            get => GetVersionFromRegistry();
+            get
+            {
+                try
+                {
+                    var version = Assembly.GetEntryAssembly()?.GetName().Version;
+                    if (version != null)
+                        return $"{version.Major}.{version.Minor}.{version.Build}";
+
+                    version = Assembly.GetExecutingAssembly().GetName().Version;
+                    if (version != null)
+                        return $"{version.Major}.{version.Minor}.{version.Build}";
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error reading version from assembly: {ex.Message}");
+                }
+
+                return "1.0";
+            }
         }
 
         /// <summary>
-        /// Gets the current version from Windows Registry
+        /// Gets application display name from assembly metadata.
         /// </summary>
-        /// <returns>Version string from registry or "1.0" as fallback</returns>
-        private string GetVersionFromRegistry()
+        public string AppName
         {
-            try
+            get
             {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
+                try
                 {
-                    if (key != null)
-                    {
-                        string? version = key.GetValue(VERSION_VALUE_NAME)?.ToString();
-                        if (!string.IsNullOrEmpty(version))
-                        {
-                            return version;
-                        }
-                    }
+                    var name = Assembly.GetEntryAssembly()?.GetName().Name
+                            ?? Assembly.GetExecutingAssembly().GetName().Name;
+                    return name ?? "SimplePicker";
+                }
+                catch
+                {
+                    return "SimplePicker";
                 }
             }
-            catch (Exception ex)
-            {
-                // Log error if needed, but don't throw
-                System.Diagnostics.Debug.WriteLine($"Error reading version from registry: {ex.Message}");
-            }
-            
-            // Fallback to default version if registry read fails
-            return "1.0";
         }
 
         /// <summary>
-        /// Sets the current version in Windows Registry
+        /// Gets the run at startup setting directly from Windows Registry.
         /// </summary>
-        /// <param name="version">Version string to set</param>
-        /// <returns>True if successful, false otherwise</returns>
-        public bool SetVersionInRegistry(string version)
-        {
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.CreateSubKey(REGISTRY_KEY_PATH))
-                {
-                    if (key != null)
-                    {
-                        key.SetValue(VERSION_VALUE_NAME, version);
-                        key.SetValue(APP_NAME_VALUE_NAME, "SimplePicker");
-                        key.SetValue(PUBLISHER_VALUE_NAME, "nstechbytes");
-                        return true;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error writing version to registry: {ex.Message}");
-            }
-            
-            return false;
-        }
-
-        /// <summary>
-        /// Gets application information from registry
-        /// </summary>
-        /// <returns>Tuple containing AppName, Version, and Publisher</returns>
-        public (string AppName, string Version, string Publisher) GetAppInfoFromRegistry()
-        {
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
-                {
-                    if (key != null)
-                    {
-                        string appName = key.GetValue(APP_NAME_VALUE_NAME)?.ToString() ?? "SimplePicker";
-                        string version = key.GetValue(VERSION_VALUE_NAME)?.ToString() ?? "1.0";
-                        string publisher = key.GetValue(PUBLISHER_VALUE_NAME)?.ToString() ?? "nstechbytes";
-                        
-                        return (appName, version, publisher);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error reading app info from registry: {ex.Message}");
-            }
-            
-            // Return defaults if registry read fails
-            return ("SimplePicker", "1.0", "nstechbytes");
-        }
-
-        /// <summary>
-        /// Gets the run at startup setting directly from Windows Registry
-        /// </summary>
-        /// <returns>True if the application is set to run at startup, false otherwise</returns>
         private bool GetRunAtStartupFromRegistry()
         {
             try
@@ -166,15 +114,13 @@ namespace simple_picker
             {
                 System.Diagnostics.Debug.WriteLine($"Error reading startup setting from registry: {ex.Message}");
             }
-            
+
             return false;
         }
 
         /// <summary>
-        /// Sets the run at startup setting directly in Windows Registry
+        /// Sets the run at startup setting directly in Windows Registry.
         /// </summary>
-        /// <param name="enable">True to enable startup, false to disable</param>
-        /// <returns>True if successful, false otherwise</returns>
         private bool SetRunAtStartupInRegistry(bool enable)
         {
             try
@@ -185,9 +131,7 @@ namespace simple_picker
                     {
                         if (enable)
                         {
-                            string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                            // For .NET Core/5+ self-contained apps, the entry point might be a .dll
-                            // We need to point to the .exe launcher.
+                            string exePath = Assembly.GetExecutingAssembly().Location;
                             exePath = exePath.Replace(".dll", ".exe");
                             key.SetValue(STARTUP_APP_NAME, $"\"{exePath}\"");
                         }
@@ -203,39 +147,17 @@ namespace simple_picker
             {
                 System.Diagnostics.Debug.WriteLine($"Error setting startup registry: {ex.Message}");
             }
-            
-            return false;
-        }
 
-        /// <summary>
-        /// Initializes registry with default values if they don't exist
-        /// </summary>
-        public void InitializeRegistryIfNeeded()
-        {
-            try
-            {
-                using (RegistryKey? key = Registry.CurrentUser.OpenSubKey(REGISTRY_KEY_PATH))
-                {
-                    if (key == null)
-                    {
-                        // Registry key doesn't exist, create it with default values
-                        SetVersionInRegistry("1.0");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error initializing registry: {ex.Message}");
-            }
+            return false;
         }
 
         // Method to reset settings to defaults
         public void ResetToDefaults()
         {
             HotkeyKey = Keys.C;
-            HotkeyModifiers = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
+            HotkeyModifiers = 6;
             ColorSelectorHotkeyKey = Keys.S;
-            ColorSelectorHotkeyModifiers = 6; // MOD_CONTROL (2) + MOD_SHIFT (4) = 6
+            ColorSelectorHotkeyModifiers = 6;
             PopupX = -1;
             PopupY = -1;
             TopMost = true;
@@ -249,8 +171,7 @@ namespace simple_picker
             LastUpdateCheck = DateTime.MinValue;
             UpdateUrl = "https://raw.githubusercontent.com/NSTechBytes/simple-picker/refs/heads/main/.github/version.ini";
             UpdateDialogShownThisSession = false;
-            
-            // Reset startup setting to false (disable startup)
+
             RunAtStartup = false;
         }
     }
