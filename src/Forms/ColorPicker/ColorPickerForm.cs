@@ -87,11 +87,13 @@ namespace simple_picker
             this.Focus();
             isPickingColor = true;
 
-            // Recreate magnifier if it was disposed, then show and start updating
+            // Recreate magnifier if it was disposed, then position at cursor BEFORE showing
+            // to avoid a flash at the default (wrong) location.
             if (magnifierForm == null || magnifierForm.IsDisposed)
             {
                 magnifierForm = new MagnifierForm();
             }
+            magnifierForm.UpdateMagnifier(Cursor.Position);
             magnifierForm.Show();
             // Keep keyboard focus on the picker so Escape cancels picking and closes the magnifier
             this.Activate();
